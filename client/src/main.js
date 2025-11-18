@@ -46,11 +46,24 @@ const statusEl = document.getElementById('connection-status');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatToggle = document.getElementById('chat-toggle');
+const scoreEl = document.getElementById('score-display');
+const leaderboardEl = document.getElementById('leaderboard');
+const leaderboardContent = document.getElementById('leaderboard-content');
 
 // Handle Login
 joinBtn.addEventListener('click', startGame);
 nameInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') startGame();
+});
+
+// Toggle Leaderboard
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (leaderboardEl) {
+            leaderboardEl.style.display = leaderboardEl.style.display === 'flex' ? 'none' : 'flex';
+        }
+    }
 });
 
 // Handle Chat
@@ -70,6 +83,14 @@ chatInput.addEventListener('keypress', (e) => {
   }
 });
 
+chatInput.addEventListener('focus', () => {
+    if (window.game) window.game.input.keyboard.enabled = false;
+});
+
+chatInput.addEventListener('blur', () => {
+    if (window.game) window.game.input.keyboard.enabled = true;
+});
+
 function addChatMessage(name, message, isSelf = false) {
   const msgDiv = document.createElement('div');
   const nameSpan = document.createElement('span');
@@ -81,6 +102,28 @@ function addChatMessage(name, message, isSelf = false) {
   msgDiv.appendChild(document.createTextNode(message));
   chatMessages.appendChild(msgDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function renderLeaderboard(data) {
+    if (!leaderboardContent) return;
+    leaderboardContent.innerHTML = '';
+    data.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'leaderboard-entry';
+        if (window.networkClient && entry.id === window.networkClient.getPlayerId()) {
+            div.classList.add('is-me');
+        }
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = entry.name;
+        
+        const scoreSpan = document.createElement('span');
+        scoreSpan.textContent = entry.score;
+        
+        div.appendChild(nameSpan);
+        div.appendChild(scoreSpan);
+        leaderboardContent.appendChild(div);
+    });
 }
 
 function startGame() {
@@ -104,7 +147,10 @@ function startGame() {
 
 function initializeNetwork() {
   // Initialize network client with name
-  window.networkClient = new NetworkClient('http://localhost:3000', playerName);
+  const serverUrl = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : 'https://lsl-production-0181.up.railway.app';
+window.networkClient = new NetworkClient(serverUrl, playerName);
 
   // Update connection status UI
   window.networkClient.on('connected', () => {
@@ -126,27 +172,42 @@ function initializeNetwork() {
     }
   });
 
+  // Handle score update
+  window.networkClient.on('scoreUpdate', (data) => {
+      if (scoreEl) scoreEl.textContent = `Score: ${data.score}`;
+  });
+
+  // Handle leaderboard update
+  window.networkClient.on('leaderboardUpdate', (data) => {
+      renderLeaderboard(data);
+  });
+
   // Handle chat messages
   window.networkClient.on('chatMessage', (data) => {
     addChatMessage(data.name, data.message, data.id === window.networkClient.getPlayerId());
     
     // Also show bubble on player
-    const currentScene = game.scene.getScenes(true)[0];
-    if (currentScene) {
-        if (data.id === window.networkClient.getPlayerId() && currentScene.localPlayer) {
-            currentScene.localPlayer.showChatBubble(data.message);
-        } else {
-            const remotePlayer = currentScene.remotePlayers.find(p => p.playerData.id === data.id);
+    const activeScenes = game.scene.getScenes(true);
+    activeScenes.forEach(scene => {
+        if (scene.localPlayer && data.id === window.networkClient.getPlayerId()) {
+            scene.localPlayer.showChatBubble(data.message);
+        } else if (scene.remotePlayers) {
+            const remotePlayer = scene.remotePlayers.find(p => p.playerData.id === data.id);
             if (remotePlayer) {
                 remotePlayer.showChatBubble(data.message);
             }
         }
-    }
+    });
   });
 
   // Handle initial scene selection based on server spawn
   let initialSceneSet = false;
   window.networkClient.on('gameState', (data) => {
+    if (data.leaderboard) renderLeaderboard(data.leaderboard);
+    if (data.player && data.player.score !== undefined && scoreEl) {
+      scoreEl.textContent = `Score: ${data.player.score}`;
+    }
+
     if (data.player && data.player.scene && !initialSceneSet) {
       const sceneMap = {
         'beach': 'BeachScene',

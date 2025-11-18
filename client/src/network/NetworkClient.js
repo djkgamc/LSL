@@ -86,6 +86,14 @@ export class NetworkClient {
     this.socket.on('chatMessage', (data) => {
       this.emit('chatMessage', data);
     });
+
+    this.socket.on('scoreUpdate', (data) => {
+      this.emit('scoreUpdate', data);
+    });
+
+    this.socket.on('leaderboardUpdate', (data) => {
+      this.emit('leaderboardUpdate', data);
+    });
   }
 
   on(event, callback) {
@@ -98,6 +106,14 @@ export class NetworkClient {
   off(event, callback) {
     if (this.callbacks[event]) {
       this.callbacks[event] = this.callbacks[event].filter(cb => cb !== callback);
+    }
+  }
+
+  removeAllListeners(event) {
+    if (event) {
+      this.callbacks[event] = [];
+    } else {
+      this.callbacks = {};
     }
   }
 
@@ -131,9 +147,9 @@ export class NetworkClient {
     }
   }
 
-  fistBump(targetId) {
+  fistBump(targetId, type = 'player') {
     if (this.connected) {
-      this.socket.emit('fistBump', { targetId });
+      this.socket.emit('fistBump', { targetId, type });
     }
   }
 

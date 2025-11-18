@@ -5,14 +5,17 @@ const cors = require('cors');
 const GameState = require('./gameState');
 
 const app = express();
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CLIENT_URL 
+    ? [process.env.CLIENT_URL, 'http://localhost:8081']
+    : '*',
+  methods: ["GET", "POST"]
+};
+app.use(cors(corsOptions));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 
 const gameState = new GameState();
@@ -32,11 +35,13 @@ io.on('connection', (socket) => {
   // Send initial game state to new player
   socket.emit('gameState', {
     player: player,
-    allPlayers: gameState.getAllPlayers()
+    allPlayers: gameState.getAllPlayers(),
+    leaderboard: gameState.getLeaderboard()
   });
 
   // Notify other players about new player
   socket.broadcast.emit('playerJoined', player);
+  io.emit('leaderboardUpdate', gameState.getLeaderboard());
 
   // Handle player movement updates
   socket.on('playerMove', (data) => {
@@ -101,22 +106,44 @@ io.on('connection', (socket) => {
     const player = gameState.getPlayer(socket.id);
     if (!player) return;
 
-    const nearbyPlayers = gameState.getNearbyPlayers(socket.id, 100);
-    const targetPlayer = nearbyPlayers.find(p => p.id === data.targetId);
+    let success = false;
+    let uniqueTargetId = null;
+    const type = data.type || 'player';
 
-    if (targetPlayer) {
-      // Notify both players
-      io.to(socket.id).emit('fistBumpSuccess', { targetId: data.targetId });
-      io.to(data.targetId).emit('fistBumpReceived', { fromId: socket.id });
-      
-      // Notify nearby players
-      const playersInScene = gameState.getPlayersInScene(player.scene);
-      playersInScene.forEach(p => {
-        io.to(p.id).emit('fistBumpAnimation', {
-          player1Id: socket.id,
-          player2Id: data.targetId
-        });
-      });
+    if (type === 'player') {
+        const nearbyPlayers = gameState.getNearbyPlayers(socket.id, 100);
+        const targetPlayer = nearbyPlayers.find(p => p.id === data.targetId);
+
+        if (targetPlayer) {
+          // Notify both players
+          io.to(socket.id).emit('fistBumpSuccess', { targetId: data.targetId });
+          io.to(data.targetId).emit('fistBumpReceived', { fromId: socket.id });
+          
+          // Notify nearby players
+          const playersInScene = gameState.getPlayersInScene(player.scene);
+          playersInScene.forEach(p => {
+            io.to(p.id).emit('fistBumpAnimation', {
+              player1Id: socket.id,
+              player2Id: data.targetId
+            });
+          });
+          success = true;
+          uniqueTargetId = targetPlayer.name; // Use name for persistence
+        }
+    } else if (type === 'cat') {
+        // Trust client for cat interactions
+        if (data.targetId) {
+            success = true;
+            uniqueTargetId = data.targetId;
+        }
+    }
+
+    if (success && uniqueTargetId) {
+        const scoreChanged = gameState.incrementScore(socket.id, uniqueTargetId);
+        if (scoreChanged) {
+            socket.emit('scoreUpdate', { score: player.score });
+            io.emit('leaderboardUpdate', gameState.getLeaderboard());
+        }
     }
   });
 
@@ -152,6 +179,7 @@ io.on('connection', (socket) => {
     clearInterval(syncInterval);
     gameState.removePlayer(socket.id);
     socket.broadcast.emit('playerLeft', { id: socket.id });
+    io.emit('leaderboardUpdate', gameState.getLeaderboard());
   });
 });
 

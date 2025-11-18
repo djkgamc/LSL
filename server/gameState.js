@@ -1,6 +1,7 @@
 class GameState {
   constructor() {
     this.players = new Map(); // socketId -> player data
+    this.persistentScores = new Map(); // playerName -> { score, bumpedTargets }
     this.scenes = ['beach', 'city', 'bar', 'hotel'];
   }
 
@@ -10,20 +11,63 @@ class GameState {
     const spawnX = 100 + Math.random() * 200; // Random spawn position
     const spawnY = 900; // Ground level (adjusted for visual ground)
 
+    const name = playerName || `Player_${socketId.substring(0, 6)}`;
+
+    // Initialize or retrieve persistent score
+    if (!this.persistentScores.has(name)) {
+      this.persistentScores.set(name, {
+        score: 0,
+        bumpedTargets: new Set()
+      });
+    }
+    const persistentData = this.persistentScores.get(name);
+
     const player = {
       id: socketId,
-      name: playerName || `Player_${socketId.substring(0, 6)}`,
+      name: name,
       scene: randomScene,
       x: spawnX,
       y: spawnY,
       facing: 'right',
       animState: 'idle',
       color: this.getRandomColor(),
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
+      score: persistentData.score,
+      bumpedTargets: persistentData.bumpedTargets
     };
 
     this.players.set(socketId, player);
     return player;
+  }
+
+  incrementScore(socketId, uniqueTargetId) {
+    const player = this.players.get(socketId);
+    if (!player) return false;
+    
+    // Access persistent data directly to ensure updates persist
+    const persistentData = this.persistentScores.get(player.name);
+    if (!persistentData) return false;
+
+    if (!persistentData.bumpedTargets.has(uniqueTargetId)) {
+      persistentData.bumpedTargets.add(uniqueTargetId);
+      persistentData.score += 1;
+      
+      // Sync back to active player object (though they share the Set reference, score is primitive)
+      player.score = persistentData.score;
+      return true;
+    }
+    return false;
+  }
+
+  getLeaderboard() {
+    return Array.from(this.persistentScores.entries())
+      .map(([name, data]) => ({
+        name: name,
+        score: data.score,
+        // For the leaderboard ID, we'll use the name since socket ID is transient
+        id: name 
+      }))
+      .sort((a, b) => b.score - a.score);
   }
 
   removePlayer(socketId) {

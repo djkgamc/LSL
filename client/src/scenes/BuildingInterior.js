@@ -122,6 +122,20 @@ export class BuildingInterior extends Phaser.Scene {
     
     // Fist bump key
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    
+    // Exit state
+    this.isExiting = false;
+    
+    this.events.on('shutdown', this.cleanupMobileControls, this);
+  }
+
+  cleanupMobileControls() {
+      if (this.mobileHandlers) {
+          this.mobileHandlers.forEach(({ element, event, handler }) => {
+              element.removeEventListener(event, handler);
+          });
+          this.mobileHandlers = [];
+      }
   }
 
   createCats() {
@@ -189,6 +203,7 @@ export class BuildingInterior extends Phaser.Scene {
         container.initialY = y;
         container.tail = tail;
         container.phase = Math.random() * Math.PI * 2; 
+        container.id = `${this.buildingId}_cat_${i}`;
         
         this.cats.push(container);
     }
@@ -278,9 +293,7 @@ export class BuildingInterior extends Phaser.Scene {
 
     // Emit network event for fist bump so others see it (optional, maybe just local for now)
     if (window.networkClient) {
-        // Assuming we have a way to send generic events or just reuse fist bump
-        // window.networkClient.sendFistBump(catId?); 
-        // Since cats aren't networked entities, this is just local fun.
+        window.networkClient.fistBump(cat.id, 'cat');
     }
   }
 
@@ -368,6 +381,8 @@ export class BuildingInterior extends Phaser.Scene {
   }
 
   setupMobileControls() {
+    this.mobileHandlers = [];
+
     const btnLeft = document.getElementById('btn-left');
     const btnRight = document.getElementById('btn-right');
     const btnAction = document.getElementById('btn-action');
@@ -376,13 +391,28 @@ export class BuildingInterior extends Phaser.Scene {
     if (!btnLeft) return;
 
     const addTouchHandlers = (element, onStart, onEnd) => {
-        element.addEventListener('touchstart', (e) => { e.preventDefault(); onStart(); });
-        element.addEventListener('mousedown', (e) => { e.preventDefault(); onStart(); });
+        const startHandler = (e) => { 
+            if (e.type === 'touchstart' && e.cancelable) e.preventDefault(); 
+            onStart(); 
+        };
+        
+        element.addEventListener('touchstart', startHandler, { passive: false });
+        element.addEventListener('mousedown', startHandler);
+        this.mobileHandlers.push({ element, event: 'touchstart', handler: startHandler });
+        this.mobileHandlers.push({ element, event: 'mousedown', handler: startHandler });
         
         if (onEnd) {
-            element.addEventListener('touchend', (e) => { e.preventDefault(); onEnd(); });
-            element.addEventListener('mouseup', (e) => { e.preventDefault(); onEnd(); });
-            element.addEventListener('mouseleave', (e) => { e.preventDefault(); onEnd(); });
+            const endHandler = (e) => { 
+                if (e.type === 'touchend' && e.cancelable) e.preventDefault(); 
+                onEnd(); 
+            };
+            
+            element.addEventListener('touchend', endHandler, { passive: false });
+            element.addEventListener('mouseup', endHandler);
+            element.addEventListener('mouseleave', endHandler);
+            this.mobileHandlers.push({ element, event: 'touchend', handler: endHandler });
+            this.mobileHandlers.push({ element, event: 'mouseup', handler: endHandler });
+            this.mobileHandlers.push({ element, event: 'mouseleave', handler: endHandler });
         }
     };
 
@@ -413,11 +443,17 @@ export class BuildingInterior extends Phaser.Scene {
   }
 
   exitBuilding() {
+    if (this.isExiting) return;
+    this.isExiting = true;
+
     // Return to previous scene
+    const exitX = this.returnX;
+    const exitY = 900; // Force ground level to avoid sky-spawning
+
     if (this.localPlayer) {
       window.networkClient.exitBuilding(this.localPlayer.x, this.localPlayer.y);
     } else {
-      window.networkClient.exitBuilding(this.returnX, this.returnY);
+      window.networkClient.exitBuilding(exitX, exitY);
     }
     
     // Switch scene
@@ -431,13 +467,13 @@ export class BuildingInterior extends Phaser.Scene {
     
     // Pass player data back
     let playerData = this.localPlayer ? this.localPlayer.playerData : {};
-    playerData.x = this.returnX;
-    playerData.y = this.returnY;
+    playerData.x = exitX;
+    playerData.y = exitY;
     playerData.scene = this.returnScene;
 
     this.scene.start(sceneKey, {
-      returnX: this.returnX,
-      returnY: this.returnY,
+      returnX: exitX,
+      returnY: exitY,
       player: playerData
     });
   }

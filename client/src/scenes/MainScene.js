@@ -60,16 +60,24 @@ export class MainScene extends Phaser.Scene {
     this.interactionText.setDepth(100);
     this.interactionText.setVisible(false);
     
-    // Interaction input
-    this.input.keyboard.on('keydown-E', () => {
-        this.handleInteraction();
-    });
+    // Flags
+    this.isEnteringBuilding = false;
+
+    // Interaction input handled in update loop
+    this.eKey = this.input.keyboard.addKey('E');
+
+    // Force cleanup of any stale listeners
+    this.cleanupNetworkEvents();
+    this.cleanupMobileControls();
 
     // Setup network events
     this.setupNetworkEvents();
     
     // Cleanup on shutdown
-    this.events.on('shutdown', this.cleanupNetworkEvents, this);
+    this.events.on('shutdown', () => {
+        this.cleanupNetworkEvents();
+        this.cleanupMobileControls();
+    }, this);
     
     // Handle initial data if provided (fixes race condition)
     if (this.initialData && this.initialData.player) {
@@ -89,6 +97,12 @@ export class MainScene extends Phaser.Scene {
     // Setup camera bounds (will follow player once created)
     this.cameras.main.setBounds(0, 0, 1920, 1080);
 
+    // Clean up listeners when scene is shut down
+    this.events.once('shutdown', () => {
+        this.cleanupNetworkEvents();
+        this.cleanupMobileControls();
+    });
+
     // Car system
     this.car = null;
     this.time.addEvent({
@@ -103,6 +117,8 @@ export class MainScene extends Phaser.Scene {
   }
 
   setupMobileControls() {
+    this.mobileHandlers = [];
+
     const btnLeft = document.getElementById('btn-left');
     const btnRight = document.getElementById('btn-right');
     const btnAction = document.getElementById('btn-action');
@@ -111,13 +127,28 @@ export class MainScene extends Phaser.Scene {
     if (!btnLeft) return;
 
     const addTouchHandlers = (element, onStart, onEnd) => {
-        element.addEventListener('touchstart', (e) => { e.preventDefault(); onStart(); });
-        element.addEventListener('mousedown', (e) => { e.preventDefault(); onStart(); });
+        const startHandler = (e) => { 
+            if (e.cancelable && e.type === 'touchstart') e.preventDefault(); 
+            onStart(); 
+        };
+        
+        element.addEventListener('touchstart', startHandler, { passive: false });
+        element.addEventListener('mousedown', startHandler);
+        this.mobileHandlers.push({ element, event: 'touchstart', handler: startHandler });
+        this.mobileHandlers.push({ element, event: 'mousedown', handler: startHandler });
         
         if (onEnd) {
-            element.addEventListener('touchend', (e) => { e.preventDefault(); onEnd(); });
-            element.addEventListener('mouseup', (e) => { e.preventDefault(); onEnd(); });
-            element.addEventListener('mouseleave', (e) => { e.preventDefault(); onEnd(); });
+            const endHandler = (e) => { 
+                if (e.cancelable && e.type === 'touchend') e.preventDefault(); 
+                onEnd(); 
+            };
+            
+            element.addEventListener('touchend', endHandler, { passive: false });
+            element.addEventListener('mouseup', endHandler);
+            element.addEventListener('mouseleave', endHandler);
+            this.mobileHandlers.push({ element, event: 'touchend', handler: endHandler });
+            this.mobileHandlers.push({ element, event: 'mouseup', handler: endHandler });
+            this.mobileHandlers.push({ element, event: 'mouseleave', handler: endHandler });
         }
     };
 
@@ -142,7 +173,19 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
+  cleanupMobileControls() {
+      if (this.mobileHandlers) {
+          this.mobileHandlers.forEach(({ element, event, handler }) => {
+              element.removeEventListener(event, handler);
+          });
+          this.mobileHandlers = [];
+      }
+  }
+
   handleInteraction() {
+      // Debounce
+      if (this.isEnteringBuilding) return;
+
       // Priority 1: Car (if nearby)
       if (this.car && this.localPlayer && !this.car.hasPlayer) {
           const dist = Phaser.Math.Distance.Between(this.car.x, this.car.y, this.localPlayer.x, this.localPlayer.y);
@@ -506,16 +549,19 @@ export class MainScene extends Phaser.Scene {
     if (this.car && this.car.active) {
       this.car.update(time, delta);
       
-      // Sync player if in car
-      if (this.car.hasPlayer && this.localPlayer) {
-        this.localPlayer.setPosition(this.car.x, this.car.y);
-        // Send position update so other players see us moving
-        window.networkClient.sendPlayerMove({
-            x: this.localPlayer.x,
-            y: this.localPlayer.y,
-            facing: this.car.direction,
-            animState: 'idle'
-        });
+      // Check again if car exists (it might have been destroyed in update)
+      if (this.car && this.car.active) {
+          // Sync player if in car
+          if (this.car.hasPlayer && this.localPlayer) {
+            this.localPlayer.setPosition(this.car.x, this.car.y);
+            // Send position update so other players see us moving
+            window.networkClient.sendPlayerMove({
+                x: this.localPlayer.x,
+                y: this.localPlayer.y,
+                facing: this.car.direction,
+                animState: 'idle'
+            });
+          }
       }
     }
 
@@ -534,6 +580,10 @@ export class MainScene extends Phaser.Scene {
     
     // Check building interactions
     this.checkBuildingInteractions();
+
+    if (Phaser.Input.Keyboard.JustDown(this.eKey)) {
+        this.handleInteraction();
+    }
   }
 
   checkSceneTransitions() {
@@ -591,6 +641,9 @@ export class MainScene extends Phaser.Scene {
   tryEnterBuilding() {
     if (!this.localPlayer || !this.buildings) return;
     
+    // Debounce entry
+    if (this.isEnteringBuilding) return;
+
     this.buildings.forEach(building => {
       const margin = 50;
       const playerX = this.localPlayer.x;
@@ -599,7 +652,12 @@ export class MainScene extends Phaser.Scene {
       
       if (playerX > left && playerX < right) {
         console.log('E pressed (event), sending enterBuilding');
+        this.isEnteringBuilding = true; // Lock
         window.networkClient.enterBuilding(building.buildingId, building.buildingType);
+        // Unlock after a timeout in case server fails? 
+        // Better to let scene change handle it, but if it fails, we're stuck.
+        // Let's add a safety unlock.
+        this.time.delayedCall(2000, () => this.isEnteringBuilding = false);
       }
     });
   }

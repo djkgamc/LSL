@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leisure Suit Larry MMORPG</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         body {
             margin: 0;
@@ -253,7 +254,65 @@
             text-shadow: 2px 2px 0 #ff00ff;
         }
 
-        @media (max-width: 768px) {
+        /* Score Display */
+        #score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ffff;
+            font-size: 24px;
+            text-shadow: 2px 2px 0 #ff00ff;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Leaderboard */
+        #leaderboard {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            max-height: 600px;
+            background: rgba(26, 11, 46, 0.95);
+            border: 4px solid #00ffff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px #00ffff;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            z-index: 200;
+            color: #fff;
+            overflow-y: auto;
+        }
+        
+        #leaderboard h2 {
+            text-align: center;
+            color: #ff00ff;
+            text-shadow: 2px 2px 0 #000;
+            margin-top: 0;
+            border-bottom: 2px solid #ff00ff;
+            padding-bottom: 10px;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            font-size: 18px;
+        }
+
+        .leaderboard-entry.is-me {
+            color: #ffff00;
+            font-weight: bold;
+        }
+
+        .leaderboard-entry:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 1024px) {
             #mobile-controls { display: block; }
             #chat-container { 
                 display: none !important; /* Force hide initially on mobile */
@@ -274,7 +333,7 @@
         }
 
         /* Force Landscape on Mobile */
-        @media screen and (max-width: 900px) and (orientation: portrait) {
+        @media screen and (max-width: 1024px) and (orientation: portrait) {
             #orientation-warning { display: flex; }
             #game-container { display: none; }
         }
@@ -289,8 +348,14 @@
 
     <div id="game-container">
         <div id="ui-layer">
+            <div id="score-display">Score: 0</div>
+            <div id="leaderboard">
+                <h2>LEADERBOARD</h2>
+                <div id="leaderboard-content"></div>
+            </div>
+
             <div id="controls-hint">
-                <div>Arrow Keys: Move | Space: Fist Bump | E: Enter Building</div>
+                <div>Arrow Keys: Move | Space: Fist Bump | TAB: Leaderboard | E: Enter Building</div>
                 <div id="connection-status">Disconnected</div>
             </div>
             

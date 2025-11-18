@@ -26,17 +26,26 @@ export class Player extends Phaser.GameObjects.Container {
     // Chat bubble
     this.chatBubble = scene.add.text(0, -80, '', {
       fontSize: '14px',
-      fontFamily: 'Courier New',
-      color: '#000000',
-      backgroundColor: '#ffffff',
-      padding: { x: 6, y: 4 },
+      fontFamily: 'Courier New, monospace',
+      color: '#00ffff',           // Neon Cyan Text
+      backgroundColor: '#1a0b2e', // Dark Purple Background
+      stroke: '#000000',
+      strokeThickness: 3,
+      shadow: { color: '#ff00ff', blur: 0, offsetX: 2, offsetY: 2, fill: true }, // Pink Shadow
+      padding: { x: 10, y: 8 },
       wordWrap: { width: 200 }
     });
     this.chatBubble.setOrigin(0.5);
+    this.chatBubble.setAlpha(0.95);
     this.chatBubble.setVisible(false);
+    
+    // Add a neon border effect using a graphics object behind the text?
+    // Or just keep it simple with the shadow which looks like a retro drop shadow.
+    // Let's add a simple border graphics that updates size in showChatBubble if we want to go crazy,
+    // but the text style above is already quite vibrant.
+    
     // Ensure chat bubble is on top of player visuals
     this.add(this.chatBubble);
-    this.bringToTop(this.chatBubble);
     this.chatTimer = null;
     
     // Animation state
@@ -209,8 +218,10 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   showChatBubble(message) {
+    console.log(`[Player] Show bubble: "${message}"`);
     this.chatBubble.setText(message);
     this.chatBubble.setVisible(true);
+    this.bringToTop(this.chatBubble); // Force top
     
     if (this.chatTimer) clearTimeout(this.chatTimer);
     this.chatTimer = setTimeout(() => {
