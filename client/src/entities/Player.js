@@ -90,13 +90,15 @@ export class Player extends Phaser.GameObjects.Container {
     let newFacing = this.facing;
     let newAnimState = 'idle';
     
+    const virtualInput = this.scene.virtualInput || { left: false, right: false };
+
     // Handle movement
-    if (this.cursors.left.isDown) {
+    if (this.cursors.left.isDown || virtualInput.left) {
       this.body.setVelocityX(-this.speed);
       newFacing = 'left';
       newAnimState = 'walk';
       moved = true;
-    } else if (this.cursors.right.isDown) {
+    } else if (this.cursors.right.isDown || virtualInput.right) {
       this.body.setVelocityX(this.speed);
       newFacing = 'right';
       newAnimState = 'walk';
