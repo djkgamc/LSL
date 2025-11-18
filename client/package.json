@@ -1,0 +1,16 @@
+{
+  "name": "lsl-mmorpg-client",
+  "version": "1.0.0",
+  "description": "Frontend game client for LSL MMORPG",
+  "scripts": {
+    "start": "npx http-server -p 8081 -c-1"
+  },
+  "dependencies": {
+    "phaser": "^3.70.0",
+    "socket.io-client": "^4.6.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
+
