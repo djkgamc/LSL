@@ -121,6 +121,8 @@ export class Car extends Phaser.GameObjects.Container {
   }
 
   update(time, delta) {
+    if (!this.scene) return;
+
     // Move
     if (this.direction === 'right') {
         this.x += (this.speed * delta) / 1000;
@@ -135,16 +137,25 @@ export class Car extends Phaser.GameObjects.Container {
         } else {
             this.destroy();
         }
+        return; // Stop update after destroy/exit
     }
 
     // Check for player interaction
-    if (!this.hasPlayer && this.scene.localPlayer) {
+    if (!this.hasPlayer && this.scene && this.scene.localPlayer && this.scene.localPlayer.active) {
         const dist = Phaser.Math.Distance.Between(this.x, this.y, this.scene.localPlayer.x, this.scene.localPlayer.y);
         if (dist < 150) {
             this.interactionText.setVisible(true);
+            
+            // Check keyboard
             if (Phaser.Input.Keyboard.JustDown(this.eKey)) {
                 this.scene.enterCar(this);
             }
+            // Check virtual input (mobile)
+            // We need to access the scene's virtualInput state, but we don't have a direct "E" state persistence 
+            // other than the event handler in MainScene which calls enterBuilding directly.
+            // We need MainScene to handle the car entry via the generic action or "E" button.
+            // MainScene's setupMobileControls handles "E" by calling tryEnterBuilding().
+            // We should update MainScene to also check for nearby cars when "E" is pressed.
         } else {
             this.interactionText.setVisible(false);
         }

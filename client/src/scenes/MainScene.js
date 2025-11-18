@@ -62,7 +62,7 @@ export class MainScene extends Phaser.Scene {
     
     // Interaction input
     this.input.keyboard.on('keydown-E', () => {
-        this.tryEnterBuilding();
+        this.handleInteraction();
     });
 
     // Setup network events
@@ -138,8 +138,22 @@ export class MainScene extends Phaser.Scene {
     });
 
     addTouchHandlers(btnEnter, () => {
-        this.tryEnterBuilding();
+        this.handleInteraction();
     });
+  }
+
+  handleInteraction() {
+      // Priority 1: Car (if nearby)
+      if (this.car && this.localPlayer && !this.car.hasPlayer) {
+          const dist = Phaser.Math.Distance.Between(this.car.x, this.car.y, this.localPlayer.x, this.localPlayer.y);
+          if (dist < 150) {
+              this.enterCar(this.car);
+              return;
+          }
+      }
+
+      // Priority 2: Building
+      this.tryEnterBuilding();
   }
 
   spawnCar() {

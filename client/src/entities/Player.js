@@ -34,7 +34,9 @@ export class Player extends Phaser.GameObjects.Container {
     });
     this.chatBubble.setOrigin(0.5);
     this.chatBubble.setVisible(false);
+    // Ensure chat bubble is on top of player visuals
     this.add(this.chatBubble);
+    this.bringToTop(this.chatBubble);
     this.chatTimer = null;
     
     // Animation state

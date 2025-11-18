@@ -21,6 +21,10 @@ export class BuildingInterior extends Phaser.Scene {
       this.input.keyboard.enabled = true;
     });
 
+    // Mobile Input State
+    this.virtualInput = { left: false, right: false };
+    this.setupMobileControls();
+
     // Interior background - Dark gradients
     createGradientTexture(this, 'interiorBg', 1920, 1080, 0x000000, 0x1a0b2e);
     this.add.image(960, 540, 'interiorBg').setDepth(-100);
@@ -361,6 +365,51 @@ export class BuildingInterior extends Phaser.Scene {
         return this.checkCatInteraction();
     }
     return false;
+  }
+
+  setupMobileControls() {
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnAction = document.getElementById('btn-action');
+    const btnEnter = document.getElementById('btn-enter');
+
+    if (!btnLeft) return;
+
+    const addTouchHandlers = (element, onStart, onEnd) => {
+        element.addEventListener('touchstart', (e) => { e.preventDefault(); onStart(); });
+        element.addEventListener('mousedown', (e) => { e.preventDefault(); onStart(); });
+        
+        if (onEnd) {
+            element.addEventListener('touchend', (e) => { e.preventDefault(); onEnd(); });
+            element.addEventListener('mouseup', (e) => { e.preventDefault(); onEnd(); });
+            element.addEventListener('mouseleave', (e) => { e.preventDefault(); onEnd(); });
+        }
+    };
+
+    // Movement
+    addTouchHandlers(btnLeft, 
+        () => this.virtualInput.left = true, 
+        () => this.virtualInput.left = false
+    );
+    
+    addTouchHandlers(btnRight, 
+        () => this.virtualInput.right = true, 
+        () => this.virtualInput.right = false
+    );
+
+    // Actions
+    addTouchHandlers(btnAction, () => {
+        if (this.localPlayer) {
+             // Try cat interaction first
+            if (!this.checkCatInteraction()) {
+                this.localPlayer.attemptFistBump();
+            }
+        }
+    });
+
+    addTouchHandlers(btnEnter, () => {
+        this.exitBuilding();
+    });
   }
 
   exitBuilding() {
