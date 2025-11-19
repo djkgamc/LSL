@@ -3,8 +3,26 @@ const db = require('./db');
 class GameState {
   constructor() {
     this.players = new Map(); // socketId -> player data
-    this.persistentScores = new Map(); // playerName -> { score, bumpedTargets }
+    this.persistentScores = new Map(); // playerName -> { score, bumpedTargets, socialPlatform, socialHandle }
     this.scenes = ['beach', 'city', 'bar', 'hotel'];
+  }
+
+  // Initialize by loading all players from database
+  async initialize() {
+    try {
+      const result = await db.pool.query('SELECT name, score, bumped_targets, social_platform, social_handle FROM players');
+      result.rows.forEach(row => {
+        this.persistentScores.set(row.name, {
+          score: row.score || 0,
+          bumpedTargets: new Set(row.bumped_targets || []),
+          socialPlatform: row.social_platform,
+          socialHandle: row.social_handle
+        });
+      });
+      console.log(`Loaded ${result.rows.length} players from database`);
+    } catch (err) {
+      console.error('Error initializing GameState from database:', err);
+    }
   }
 
   async addPlayer(socketId, playerName, socialPlatform, socialHandle) {
@@ -35,7 +53,8 @@ class GameState {
         dbSocialPlatform = res.rows[0].social_platform;
         dbSocialHandle = res.rows[0].social_handle;
 
-        // Update existing player's social info if provided
+        // Update existing player's social info ONLY if new values are provided
+        // Never overwrite existing values with null
         if (socialPlatform && socialHandle) {
           await db.pool.query(
             'UPDATE players SET social_platform = $1, social_handle = $2 WHERE name = $3',
@@ -45,6 +64,7 @@ class GameState {
           dbSocialPlatform = socialPlatform;
           dbSocialHandle = socialHandle;
         }
+        // Otherwise, keep the existing DB values (already loaded above)
       } else {
         // Create new player entry
         await db.pool.query(

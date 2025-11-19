@@ -305,6 +305,7 @@ io.on('connection', async (socket) => {
 
 server.listen(PORT, async () => {
   await db.initDB();
+  await gameState.initialize(); // Load all players from database
   console.log(`LSL MMORPG Server running on port ${PORT}`);
 });
 
