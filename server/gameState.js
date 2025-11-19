@@ -18,6 +18,8 @@ class GameState {
     // Initialize or retrieve persistent score from DB
     let score = 0;
     let bumpedTargets = new Set();
+    let dbSocialPlatform = null;
+    let dbSocialHandle = null;
 
     try {
       // Check if player exists
@@ -29,15 +31,19 @@ class GameState {
         // We defined bumped_targets as TEXT[], so it should be an array of strings.
         bumpedTargets = new Set(res.rows[0].bumped_targets || []);
 
+        // Load existing social info from database
+        dbSocialPlatform = res.rows[0].social_platform;
+        dbSocialHandle = res.rows[0].social_handle;
+
         // Update existing player's social info if provided
         if (socialPlatform && socialHandle) {
           await db.pool.query(
             'UPDATE players SET social_platform = $1, social_handle = $2 WHERE name = $3',
             [socialPlatform, socialHandle, name]
           );
-          // Update local vars to reflect new info
-          res.rows[0].social_platform = socialPlatform;
-          res.rows[0].social_handle = socialHandle;
+          // Use the newly provided social info
+          dbSocialPlatform = socialPlatform;
+          dbSocialHandle = socialHandle;
         }
       } else {
         // Create new player entry
@@ -45,17 +51,20 @@ class GameState {
           'INSERT INTO players (name, score, bumped_targets, social_platform, social_handle) VALUES ($1, $2, $3, $4, $5)',
           [name, 0, [], socialPlatform, socialHandle]
         );
+        // Use the newly provided social info
+        dbSocialPlatform = socialPlatform;
+        dbSocialHandle = socialHandle;
       }
     } catch (err) {
       console.error('Error loading player data:', err);
     }
 
-    // Update in-memory map for fast access (optional, but good for performance)
+    // Update in-memory map for fast access
     this.persistentScores.set(name, {
       score: score,
       bumpedTargets: bumpedTargets,
-      socialPlatform: socialPlatform || (res && res.rows.length > 0 ? res.rows[0].social_platform : null),
-      socialHandle: socialHandle || (res && res.rows.length > 0 ? res.rows[0].social_handle : null)
+      socialPlatform: dbSocialPlatform,
+      socialHandle: dbSocialHandle
     });
 
     const player = {
@@ -70,8 +79,8 @@ class GameState {
       lastUpdate: Date.now(),
       score: score,
       bumpedTargets: bumpedTargets,
-      socialPlatform: this.persistentScores.get(name).socialPlatform,
-      socialHandle: this.persistentScores.get(name).socialHandle
+      socialPlatform: dbSocialPlatform,
+      socialHandle: dbSocialHandle
     };
 
     this.players.set(socketId, player);
