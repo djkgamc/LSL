@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Leisure Suit Larry MMORPG</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
@@ -17,6 +17,7 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            touch-action: none; /* Prevent pinch-zoom and other gestures */
         }
         #game-container {
             position: relative;
@@ -171,6 +172,32 @@
             font-family: 'Courier New', monospace;
             font-size: 14px;
             outline: none;
+            flex-grow: 1;
+        }
+
+        #chat-input-row {
+            display: flex;
+            width: 100%;
+        }
+
+        #chat-send-btn {
+            background: #00ffff;
+            color: #000;
+            border: none;
+            border-top: 2px solid #00ffff;
+            cursor: pointer;
+            padding: 0 15px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        #chat-send-btn:hover {
+            background: #ccffff;
+        }
+
+        #chat-send-btn:active {
+            background: #00cccc;
         }
 
         /* Mobile Controls */
@@ -378,7 +405,10 @@
             
             <div id="chat-container">
                 <div id="chat-messages"></div>
-                <input type="text" id="chat-input" placeholder="Say something..." maxlength="50">
+                <div id="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Say something..." maxlength="50">
+                    <button id="chat-send-btn">➤</button>
+                </div>
             </div>
 
             <button id="chat-toggle">💬 Chat</button>

@@ -45,6 +45,7 @@ const statusEl = document.getElementById('connection-status');
 
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
+const chatSendBtn = document.getElementById('chat-send-btn');
 const chatToggle = document.getElementById('chat-toggle');
 const leaderboardToggle = document.getElementById('leaderboard-toggle');
 const scoreEl = document.getElementById('score-display');
@@ -84,7 +85,15 @@ if (leaderboardToggle) {
 }
 
 chatInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter' && window.networkClient) {
+  if (e.key === 'Enter') sendMessage();
+});
+
+if (chatSendBtn) {
+    chatSendBtn.addEventListener('click', sendMessage);
+}
+
+function sendMessage() {
+  if (window.networkClient) {
     const message = chatInput.value.trim();
     if (message) {
       window.networkClient.sendChat(message);
@@ -92,7 +101,7 @@ chatInput.addEventListener('keypress', (e) => {
       chatInput.blur(); // Force blur to return focus to game
     }
   }
-});
+}
 
 // Handle chat keyboard enable/disable with window focus fallback
 chatInput.addEventListener('focus', () => {
