@@ -17,7 +17,14 @@ app.use(cors(corsOptions));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: corsOptions
+  cors: corsOptions,
+  transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+  allowEIO3: true, // Allow Engine.IO v3 clients
+  pingTimeout: 60000, // Increase timeout for Railway proxy
+  pingInterval: 25000, // Send ping every 25s
+  connectTimeout: 45000, // Connection timeout
+  path: '/socket.io/', // Explicit path
+  serveClient: false // Don't serve client files
 });
 
 const gameState = new GameState();

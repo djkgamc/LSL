@@ -2,7 +2,14 @@ export class NetworkClient {
   constructor(serverUrl, playerName) {
     // Use global io from Socket.io CDN
     this.socket = window.io(serverUrl, {
-      query: { name: playerName }
+      query: { name: playerName },
+      transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      timeout: 20000, // Connection timeout
+      path: '/socket.io/' // Explicit path
     });
     this.playerId = null;
     this.connected = false;
