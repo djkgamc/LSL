@@ -26,8 +26,8 @@ export class MainScene extends Phaser.Scene {
     });
     
     // Mobile Input State
-    this.virtualInput = { left: false, right: false };
-    this.setupMobileControls();
+    // this.virtualInput = { left: false, right: false };
+    // this.setupMobileControls();
     
     // Set background color
     this.cameras.main.setBackgroundColor(this.backgroundColor);
@@ -68,7 +68,7 @@ export class MainScene extends Phaser.Scene {
 
     // Force cleanup of any stale listeners
     this.cleanupNetworkEvents();
-    this.cleanupMobileControls();
+    // this.cleanupMobileControls();
 
     // Setup network events
     this.setupNetworkEvents();
@@ -76,7 +76,7 @@ export class MainScene extends Phaser.Scene {
     // Cleanup on shutdown
     this.events.on('shutdown', () => {
         this.cleanupNetworkEvents();
-        this.cleanupMobileControls();
+        // this.cleanupMobileControls();
     }, this);
     
     // Handle initial data if provided (fixes race condition)
@@ -100,7 +100,6 @@ export class MainScene extends Phaser.Scene {
     // Clean up listeners when scene is shut down
     this.events.once('shutdown', () => {
         this.cleanupNetworkEvents();
-        this.cleanupMobileControls();
     });
 
     // Car system
@@ -116,70 +115,13 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
-  setupMobileControls() {
-    this.mobileHandlers = [];
+  // setupMobileControls() { ... }
+  // cleanupMobileControls() { ... }
 
-    const btnLeft = document.getElementById('btn-left');
-    const btnRight = document.getElementById('btn-right');
-    const btnAction = document.getElementById('btn-action');
-    const btnEnter = document.getElementById('btn-enter');
-
-    if (!btnLeft) return;
-
-    const addTouchHandlers = (element, onStart, onEnd) => {
-        const startHandler = (e) => { 
-            if (e.cancelable && e.type === 'touchstart') e.preventDefault(); 
-            onStart(); 
-        };
-        
-        element.addEventListener('touchstart', startHandler, { passive: false });
-        element.addEventListener('mousedown', startHandler);
-        this.mobileHandlers.push({ element, event: 'touchstart', handler: startHandler });
-        this.mobileHandlers.push({ element, event: 'mousedown', handler: startHandler });
-        
-        if (onEnd) {
-            const endHandler = (e) => { 
-                if (e.cancelable && e.type === 'touchend') e.preventDefault(); 
-                onEnd(); 
-            };
-            
-            element.addEventListener('touchend', endHandler, { passive: false });
-            element.addEventListener('mouseup', endHandler);
-            element.addEventListener('mouseleave', endHandler);
-            this.mobileHandlers.push({ element, event: 'touchend', handler: endHandler });
-            this.mobileHandlers.push({ element, event: 'mouseup', handler: endHandler });
-            this.mobileHandlers.push({ element, event: 'mouseleave', handler: endHandler });
-        }
-    };
-
-    // Movement
-    addTouchHandlers(btnLeft, 
-        () => this.virtualInput.left = true, 
-        () => this.virtualInput.left = false
-    );
-    
-    addTouchHandlers(btnRight, 
-        () => this.virtualInput.right = true, 
-        () => this.virtualInput.right = false
-    );
-
-    // Actions
-    addTouchHandlers(btnAction, () => {
-        if (this.localPlayer) this.localPlayer.attemptFistBump();
-    });
-
-    addTouchHandlers(btnEnter, () => {
-        this.handleInteraction();
-    });
-  }
-
-  cleanupMobileControls() {
-      if (this.mobileHandlers) {
-          this.mobileHandlers.forEach(({ element, event, handler }) => {
-              element.removeEventListener(event, handler);
-          });
-          this.mobileHandlers = [];
-      }
+  onMobileAction(action) {
+    console.log('MainScene onMobileAction:', action);
+    if (action === 'enter') this.handleInteraction();
+    if (action === 'action' && this.localPlayer) this.localPlayer.attemptFistBump();
   }
 
   handleInteraction() {

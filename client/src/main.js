@@ -46,6 +46,7 @@ const statusEl = document.getElementById('connection-status');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatToggle = document.getElementById('chat-toggle');
+const leaderboardToggle = document.getElementById('leaderboard-toggle');
 const scoreEl = document.getElementById('score-display');
 const leaderboardEl = document.getElementById('leaderboard');
 const leaderboardContent = document.getElementById('leaderboard-content');
@@ -73,22 +74,49 @@ if (chatToggle) {
     });
 }
 
+// Handle Mobile Leaderboard Toggle
+if (leaderboardToggle) {
+    leaderboardToggle.addEventListener('click', () => {
+        if (leaderboardEl) {
+            leaderboardEl.style.display = leaderboardEl.style.display === 'flex' ? 'none' : 'flex';
+        }
+    });
+}
+
 chatInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter' && window.networkClient) {
     const message = chatInput.value.trim();
     if (message) {
       window.networkClient.sendChat(message);
       chatInput.value = '';
+      chatInput.blur(); // Force blur to return focus to game
     }
   }
 });
 
+// Handle chat keyboard enable/disable with window focus fallback
 chatInput.addEventListener('focus', () => {
-    if (window.game) window.game.input.keyboard.enabled = false;
+    if (window.game) {
+        window.game.input.keyboard.enabled = false;
+        window.game.input.mouse.enabled = false;
+    }
 });
 
 chatInput.addEventListener('blur', () => {
-    if (window.game) window.game.input.keyboard.enabled = true;
+    if (window.game) {
+        window.game.input.keyboard.enabled = true;
+        window.game.input.mouse.enabled = true;
+        // Force focus back to canvas
+        window.game.canvas.focus();
+    }
+});
+
+// Ensure game regains focus if clicked
+document.addEventListener('mousedown', (e) => {
+    if (e.target.tagName === 'CANVAS' && window.game) {
+        window.game.input.keyboard.enabled = true;
+        window.game.input.mouse.enabled = true;
+    }
 });
 
 function addChatMessage(name, message, isSelf = false) {
@@ -126,6 +154,81 @@ function renderLeaderboard(data) {
     });
 }
 
+// Global Mobile Input State
+window.mobileInput = { left: false, right: false };
+
+function setupGlobalMobileControls() {
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnAction = document.getElementById('btn-action');
+    const btnEnter = document.getElementById('btn-enter');
+
+    if (!btnLeft) return;
+
+    const addBtnHandler = (element, onDown, onUp) => {
+        const preventDefault = (e) => {
+            if (e.cancelable && e.type === 'touchstart') e.preventDefault();
+        };
+
+        const downHandler = (e) => {
+            preventDefault(e);
+            onDown();
+        };
+
+        const upHandler = (e) => {
+            preventDefault(e);
+            onUp();
+        };
+
+        // Touch events
+        element.addEventListener('touchstart', downHandler, { passive: false });
+        element.addEventListener('touchend', upHandler);
+        element.addEventListener('touchcancel', upHandler);
+
+        // Mouse events
+        element.addEventListener('mousedown', downHandler);
+        element.addEventListener('mouseup', upHandler);
+        element.addEventListener('mouseleave', upHandler);
+    };
+
+    // Movement
+    addBtnHandler(btnLeft, 
+        () => window.mobileInput.left = true, 
+        () => window.mobileInput.left = false
+    );
+
+    addBtnHandler(btnRight, 
+        () => window.mobileInput.right = true, 
+        () => window.mobileInput.right = false
+    );
+
+    // Actions (One-shot)
+    const triggerSceneAction = (actionType) => {
+        if (!window.game) return;
+        const activeScenes = window.game.scene.getScenes(true);
+        activeScenes.forEach(scene => {
+            if (scene.onMobileAction) {
+                scene.onMobileAction(actionType);
+            }
+        });
+    };
+
+    const addActionHandler = (element, actionType) => {
+        const handler = (e) => {
+            if (e.cancelable && e.type === 'touchstart') e.preventDefault();
+            // Debounce/Throttle? The game logic usually handles debounce.
+            // We just trigger the action.
+            triggerSceneAction(actionType);
+        };
+
+        element.addEventListener('touchstart', handler, { passive: false });
+        element.addEventListener('mousedown', handler);
+    };
+
+    addActionHandler(btnEnter, 'enter');
+    addActionHandler(btnAction, 'action');
+}
+
 function startGame() {
   const name = nameInput.value.trim();
   if (name) {
@@ -142,6 +245,9 @@ function startGame() {
     // Start Game
     game = new Phaser.Game(config);
     window.game = game;
+
+    // Setup Mobile Controls (Global)
+    setupGlobalMobileControls();
   }
 }
 

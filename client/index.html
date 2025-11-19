@@ -229,6 +229,22 @@
             font-family: 'Courier New', monospace;
         }
 
+        #leaderboard-toggle {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 120px; /* Adjusted to avoid overlap with chat toggle */
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #fff;
+            color: #ffd700; /* Gold for trophy */
+            padding: 5px 10px;
+            border-radius: 4px;
+            pointer-events: auto;
+            z-index: 101;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+
         /* Orientation Warning */
         #orientation-warning {
             display: none;
@@ -325,6 +341,7 @@
                 display: flex !important;
             }
             #chat-toggle { display: block; }
+            #leaderboard-toggle { display: block; }
             #controls-hint { display: none; } /* Hide desktop hints on mobile */
             
             /* Adjust login screen for mobile */
@@ -365,6 +382,7 @@
             </div>
 
             <button id="chat-toggle">💬 Chat</button>
+            <button id="leaderboard-toggle">🏆</button>
 
             <div id="mobile-controls">
                 <div id="btn-left" class="control-btn">←</div>

@@ -101,7 +101,7 @@ export class Player extends Phaser.GameObjects.Container {
     let newFacing = this.facing;
     let newAnimState = 'idle';
     
-    const virtualInput = this.scene.virtualInput || { left: false, right: false };
+    const virtualInput = this.scene.virtualInput || (window.mobileInput || { left: false, right: false });
 
     // Handle movement
     if (this.cursors.left.isDown || virtualInput.left) {

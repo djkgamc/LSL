@@ -22,8 +22,8 @@ export class BuildingInterior extends Phaser.Scene {
     });
 
     // Mobile Input State
-    this.virtualInput = { left: false, right: false };
-    this.setupMobileControls();
+    // this.virtualInput = { left: false, right: false };
+    // this.setupMobileControls();
 
     // Interior background - Dark gradients
     createGradientTexture(this, 'interiorBg', 1920, 1080, 0x000000, 0x1a0b2e);
@@ -126,17 +126,10 @@ export class BuildingInterior extends Phaser.Scene {
     // Exit state
     this.isExiting = false;
     
-    this.events.on('shutdown', this.cleanupMobileControls, this);
+    // this.events.on('shutdown', this.cleanupMobileControls, this);
   }
 
-  cleanupMobileControls() {
-      if (this.mobileHandlers) {
-          this.mobileHandlers.forEach(({ element, event, handler }) => {
-              element.removeEventListener(event, handler);
-          });
-          this.mobileHandlers = [];
-      }
-  }
+  // cleanupMobileControls() { ... }
 
   createCats() {
     this.cats = [];
@@ -380,66 +373,14 @@ export class BuildingInterior extends Phaser.Scene {
     return false;
   }
 
-  setupMobileControls() {
-    this.mobileHandlers = [];
+  // setupMobileControls() { ... }
 
-    const btnLeft = document.getElementById('btn-left');
-    const btnRight = document.getElementById('btn-right');
-    const btnAction = document.getElementById('btn-action');
-    const btnEnter = document.getElementById('btn-enter');
-
-    if (!btnLeft) return;
-
-    const addTouchHandlers = (element, onStart, onEnd) => {
-        const startHandler = (e) => { 
-            if (e.type === 'touchstart' && e.cancelable) e.preventDefault(); 
-            onStart(); 
-        };
-        
-        element.addEventListener('touchstart', startHandler, { passive: false });
-        element.addEventListener('mousedown', startHandler);
-        this.mobileHandlers.push({ element, event: 'touchstart', handler: startHandler });
-        this.mobileHandlers.push({ element, event: 'mousedown', handler: startHandler });
-        
-        if (onEnd) {
-            const endHandler = (e) => { 
-                if (e.type === 'touchend' && e.cancelable) e.preventDefault(); 
-                onEnd(); 
-            };
-            
-            element.addEventListener('touchend', endHandler, { passive: false });
-            element.addEventListener('mouseup', endHandler);
-            element.addEventListener('mouseleave', endHandler);
-            this.mobileHandlers.push({ element, event: 'touchend', handler: endHandler });
-            this.mobileHandlers.push({ element, event: 'mouseup', handler: endHandler });
-            this.mobileHandlers.push({ element, event: 'mouseleave', handler: endHandler });
-        }
-    };
-
-    // Movement
-    addTouchHandlers(btnLeft, 
-        () => this.virtualInput.left = true, 
-        () => this.virtualInput.left = false
-    );
-    
-    addTouchHandlers(btnRight, 
-        () => this.virtualInput.right = true, 
-        () => this.virtualInput.right = false
-    );
-
-    // Actions
-    addTouchHandlers(btnAction, () => {
-        if (this.localPlayer) {
-             // Try cat interaction first
-            if (!this.checkCatInteraction()) {
-                this.localPlayer.attemptFistBump();
-            }
-        }
-    });
-
-    addTouchHandlers(btnEnter, () => {
-        this.exitBuilding();
-    });
+  onMobileAction(action) {
+      console.log('BuildingInterior onMobileAction:', action);
+      if (action === 'enter') this.exitBuilding();
+      if (action === 'action' && this.localPlayer) {
+          if (!this.checkCatInteraction()) this.localPlayer.attemptFistBump();
+      }
   }
 
   exitBuilding() {
