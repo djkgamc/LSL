@@ -140,6 +140,17 @@
             display: none; /* Hidden until logged in */
         }
         
+        #online-players {
+            padding: 5px 10px;
+            color: #0f0;
+            font-size: 12px;
+            border-bottom: 1px solid #00ffff;
+            background: rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         #chat-container:hover, #chat-container:focus-within {
             opacity: 1;
         }
@@ -411,6 +422,7 @@
             </div>
             
             <div id="chat-container">
+                <div id="online-players">Online: ...</div>
                 <div id="chat-messages"></div>
                 <div id="chat-input-row">
                     <input type="text" id="chat-input" placeholder="Say something..." maxlength="50">

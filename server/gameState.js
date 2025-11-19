@@ -67,7 +67,8 @@ class GameState {
         // For the leaderboard ID, we'll use the name since socket ID is transient
         id: name 
       }))
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
   }
 
   removePlayer(socketId) {

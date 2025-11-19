@@ -32,6 +32,7 @@ const config = {
 // Game state
 let game = null;
 let playerName = 'Larry';
+let onlinePlayers = [];
 
 // Initialize music manager (audio context needs user interaction)
 window.musicManager = new MusicManager();
@@ -41,6 +42,7 @@ const loginScreen = document.getElementById('login-screen');
 const joinBtn = document.getElementById('join-btn');
 const nameInput = document.getElementById('player-name-input');
 const chatContainer = document.getElementById('chat-container');
+const onlinePlayersEl = document.getElementById('online-players');
 const statusEl = document.getElementById('connection-status');
 
 const chatMessages = document.getElementById('chat-messages');
@@ -139,6 +141,30 @@ function addChatMessage(name, message, isSelf = false) {
   msgDiv.appendChild(document.createTextNode(message));
   chatMessages.appendChild(msgDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function updateOnlinePlayersUI() {
+    if (!onlinePlayersEl) return;
+    
+    const count = onlinePlayers.length;
+    const maxDisplay = 3;
+    
+    // Sort to put self first, then alphabetical
+    const sortedPlayers = [...onlinePlayers].sort((a, b) => {
+        if (window.networkClient && a.id === window.networkClient.getPlayerId()) return -1;
+        if (window.networkClient && b.id === window.networkClient.getPlayerId()) return 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    let text = `Online (${count}): `;
+    const names = sortedPlayers.slice(0, maxDisplay).map(p => p.name);
+    text += names.join(', ');
+    
+    if (count > maxDisplay) {
+        text += `, and ${count - maxDisplay} others`;
+    }
+    
+    onlinePlayersEl.textContent = text;
 }
 
 function renderLeaderboard(data) {
@@ -287,6 +313,28 @@ window.networkClient = new NetworkClient(serverUrl, playerName);
     }
   });
 
+    window.networkClient.on('playerJoined', (player) => {
+        if (!onlinePlayers.find(p => p.id === player.id)) {
+            onlinePlayers.push(player);
+            updateOnlinePlayersUI();
+        }
+    });
+
+    window.networkClient.on('playerLeft', (data) => {
+        onlinePlayers = onlinePlayers.filter(p => p.id !== data.id);
+        updateOnlinePlayersUI();
+    });
+
+    window.networkClient.on('playerUpdate', (player) => {
+        // Update local player data if needed (e.g. name change, though not currently supported)
+        const idx = onlinePlayers.findIndex(p => p.id === player.id);
+        if (idx !== -1) {
+            onlinePlayers[idx] = { ...onlinePlayers[idx], ...player };
+            // Only update UI if name changed (optimization)
+            // updateOnlinePlayersUI(); 
+        }
+    });
+
   // Handle score update
   window.networkClient.on('scoreUpdate', (data) => {
       if (scoreEl) scoreEl.textContent = `Score: ${data.score}`;
@@ -323,6 +371,10 @@ window.networkClient = new NetworkClient(serverUrl, playerName);
   // Handle initial scene selection based on server spawn
   let initialSceneSet = false;
   window.networkClient.on('gameState', (data) => {
+    if (data.allPlayers) {
+        onlinePlayers = data.allPlayers;
+        updateOnlinePlayersUI();
+    }
     if (data.leaderboard) renderLeaderboard(data.leaderboard);
     if (data.player && data.player.score !== undefined && scoreEl) {
       scoreEl.textContent = `Score: ${data.player.score}`;
