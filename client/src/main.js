@@ -301,6 +301,11 @@ window.networkClient = new NetworkClient(serverUrl, playerName);
   window.networkClient.on('chatMessage', (data) => {
     addChatMessage(data.name, data.message, data.id === window.networkClient.getPlayerId());
     
+    // Play sound
+    if (window.musicManager) {
+        window.musicManager.playChatSound();
+    }
+    
     // Also show bubble on player
     const activeScenes = game.scene.getScenes(true);
     activeScenes.forEach(scene => {

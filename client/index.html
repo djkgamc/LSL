@@ -151,6 +151,7 @@
             color: #fff;
             font-size: 14px;
             text-shadow: 1px 1px 0 #000;
+            touch-action: pan-y;
         }
         
         #chat-messages div {
@@ -327,6 +328,7 @@
             z-index: 200;
             color: #fff;
             overflow-y: auto;
+            touch-action: pan-y;
         }
         
         #leaderboard h2 {
@@ -359,15 +361,20 @@
             #mobile-controls { display: block; }
             #chat-container { 
                 display: none !important; /* Force hide initially on mobile */
-                width: 80%;
-                left: 10%;
-                bottom: 200px; /* Move up above controls */
-                height: 150px;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 70%;
+                height: 60%;
+                bottom: auto;
+                z-index: 1000;
+                background: rgba(0, 0, 0, 0.85);
             }
             #chat-container.visible {
                 display: flex !important;
             }
-            #chat-toggle { display: block; }
+            #chat-toggle { display: block; z-index: 1001; }
             #leaderboard-toggle { display: block; }
             #controls-hint { display: none; } /* Hide desktop hints on mobile */
             
@@ -424,7 +431,7 @@
         
         <div id="login-screen">
             <div class="login-box">
-                <h1>LSL MMORPG</h1>
+                <h1>LEISURE SUIT LARRY MMORPG</h1>
                 <input type="text" id="player-name-input" placeholder="Enter Name" maxlength="12" autofocus>
                 <br>
                 <button id="join-btn">JOIN GAME</button>

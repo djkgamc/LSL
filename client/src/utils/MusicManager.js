@@ -237,6 +237,31 @@ export class MusicManager {
     });
   }
 
+  playChatSound() {
+    if (!this.audioContext) return;
+    if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+    }
+
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    
+    // High pitch "ping" (retro square)
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(600, this.audioContext.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, this.audioContext.currentTime + 0.1);
+    
+    gain.gain.setValueAtTime(0, this.audioContext.currentTime);
+    gain.gain.linearRampToValueAtTime(this.volume * 0.2, this.audioContext.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+    
+    osc.connect(gain);
+    gain.connect(this.audioContext.destination);
+    
+    osc.start();
+    osc.stop(this.audioContext.currentTime + 0.2);
+  }
+
   midiToFreq(note) {
     return 440 * Math.pow(2, (note - 69) / 12);
   }
