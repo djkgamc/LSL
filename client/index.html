@@ -1,11 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Leisure Suit Larry MMORPG</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.6.0/css/all.min.css">
     <style>
+        /* ... existing styles ... */
+
+        .leaderboard-entry a i {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            font-size: 20px;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -17,8 +30,10 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
-            touch-action: none; /* Prevent pinch-zoom and other gestures */
+            touch-action: none;
+            /* Prevent pinch-zoom and other gestures */
         }
+
         #game-container {
             position: relative;
             width: 100%;
@@ -27,12 +42,13 @@
             justify-content: center;
             align-items: center;
         }
+
         canvas {
             display: block;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
-        
+
         /* UI Overlay */
         #ui-layer {
             position: absolute;
@@ -40,9 +56,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Let clicks pass through to canvas */
+            pointer-events: none;
+            /* Let clicks pass through to canvas */
         }
-        
+
         #controls-hint {
             position: absolute;
             top: 10px;
@@ -56,7 +73,7 @@
             border-radius: 4px;
             pointer-events: auto;
         }
-        
+
         #connection-status {
             margin-top: 5px;
             color: #888;
@@ -78,7 +95,7 @@
             z-index: 1000;
             pointer-events: auto;
         }
-        
+
         .login-box {
             background: #2c1e4a;
             padding: 40px;
@@ -87,14 +104,14 @@
             text-align: center;
             box-shadow: 0 0 20px #ff00ff;
         }
-        
+
         h1 {
             color: #00ffff;
             text-shadow: 2px 2px 0 #ff00ff;
             margin-bottom: 30px;
             font-size: 32px;
         }
-        
+
         input[type="text"] {
             background: #0f0b21;
             border: 2px solid #00ffff;
@@ -105,8 +122,48 @@
             margin-bottom: 20px;
             width: 200px;
             outline: none;
+            width: 200px;
+            outline: none;
         }
-        
+
+        select {
+            background: #0f0b21;
+            border: 2px solid #00ffff;
+            color: #fff;
+            padding: 10px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+            width: 224px;
+            /* Match input width + padding + border */
+            outline: none;
+            cursor: pointer;
+        }
+
+        .social-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .social-input-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .social-input-row select {
+            width: 120px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .social-input-row input {
+            width: 140px;
+            margin-bottom: 0;
+        }
+
         button {
             background: #ff00ff;
             color: #fff;
@@ -117,7 +174,7 @@
             cursor: pointer;
             transition: transform 0.1s;
         }
-        
+
         button:hover {
             transform: scale(1.05);
             background: #ff33ff;
@@ -137,9 +194,10 @@
             pointer-events: auto;
             opacity: 0.8;
             transition: opacity 0.2s;
-            display: none; /* Hidden until logged in */
+            display: none;
+            /* Hidden until logged in */
         }
-        
+
         #online-players {
             padding: 5px 10px;
             color: #0f0;
@@ -151,10 +209,11 @@
             text-overflow: ellipsis;
         }
 
-        #chat-container:hover, #chat-container:focus-within {
+        #chat-container:hover,
+        #chat-container:focus-within {
             opacity: 1;
         }
-        
+
         #chat-messages {
             flex-grow: 1;
             overflow-y: auto;
@@ -164,17 +223,17 @@
             text-shadow: 1px 1px 0 #000;
             touch-action: pan-y;
         }
-        
+
         #chat-messages div {
             margin-bottom: 4px;
             word-wrap: break-word;
         }
-        
+
         .chat-name {
             color: #00ffff;
             font-weight: bold;
         }
-        
+
         #chat-input {
             background: rgba(0, 0, 0, 0.7);
             border: none;
@@ -247,12 +306,35 @@
             transform: scale(0.95);
         }
 
-        #btn-left { bottom: 20px; left: 20px; }
-        #btn-right { bottom: 20px; left: 100px; }
-        
-        #btn-action { bottom: 40px; right: 20px; width: 70px; height: 70px; background: rgba(255, 0, 255, 0.3); border-color: #ff00ff; }
-        #btn-enter { bottom: 120px; right: 20px; width: 50px; height: 50px; background: rgba(0, 255, 255, 0.3); border-color: #00ffff; font-size: 16px; }
-        
+        #btn-left {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        #btn-right {
+            bottom: 20px;
+            left: 100px;
+        }
+
+        #btn-action {
+            bottom: 40px;
+            right: 20px;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 0, 255, 0.3);
+            border-color: #ff00ff;
+        }
+
+        #btn-enter {
+            bottom: 120px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.3);
+            border-color: #00ffff;
+            font-size: 16px;
+        }
+
         #chat-toggle {
             display: none;
             position: absolute;
@@ -272,10 +354,12 @@
             display: none;
             position: absolute;
             top: 10px;
-            right: 120px; /* Adjusted to avoid overlap with chat toggle */
+            right: 120px;
+            /* Adjusted to avoid overlap with chat toggle */
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid #fff;
-            color: #ffd700; /* Gold for trophy */
+            color: #ffd700;
+            /* Gold for trophy */
             padding: 5px 10px;
             border-radius: 4px;
             pointer-events: auto;
@@ -339,9 +423,11 @@
             z-index: 200;
             color: #fff;
             overflow-y: auto;
+            overflow-y: auto;
             touch-action: pan-y;
+            pointer-events: auto;
         }
-        
+
         #leaderboard h2 {
             text-align: center;
             color: #ff00ff;
@@ -357,6 +443,21 @@
             padding: 10px;
             border-bottom: 1px solid #444;
             font-size: 18px;
+            align-items: center;
+        }
+
+        .leaderboard-entry a {
+            color: #00ffff;
+            margin-left: 10px;
+            text-decoration: none;
+            transition: color 0.2s;
+            display: inline-block;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .leaderboard-entry a:hover {
+            color: #fff;
         }
 
         .leaderboard-entry.is-me {
@@ -369,9 +470,13 @@
         }
 
         @media (max-width: 1024px) {
-            #mobile-controls { display: block; }
-            #chat-container { 
-                display: none !important; /* Force hide initially on mobile */
+            #mobile-controls {
+                display: block;
+            }
+
+            #chat-container {
+                display: none !important;
+                /* Force hide initially on mobile */
                 position: fixed;
                 top: 50%;
                 left: 50%;
@@ -382,30 +487,55 @@
                 z-index: 1000;
                 background: rgba(0, 0, 0, 0.85);
             }
+
             #chat-container.visible {
                 display: flex !important;
             }
-            #chat-toggle { display: block; z-index: 1001; }
-            #leaderboard-toggle { display: block; }
-            #controls-hint { display: none; } /* Hide desktop hints on mobile */
-            
+
+            #chat-toggle {
+                display: block;
+                z-index: 1001;
+            }
+
+            #leaderboard-toggle {
+                display: block;
+            }
+
+            #controls-hint {
+                display: none;
+            }
+
+            /* Hide desktop hints on mobile */
+
             /* Adjust login screen for mobile */
-            .login-box { width: 80%; padding: 20px; }
-            input[type="text"] { width: 80%; }
+            .login-box {
+                width: 80%;
+                padding: 20px;
+            }
+
+            input[type="text"] {
+                width: 80%;
+            }
         }
 
         /* Force Landscape on Mobile */
         @media screen and (max-width: 1024px) and (orientation: portrait) {
-            #orientation-warning { display: flex; }
-            #game-container { display: none; }
+            #orientation-warning {
+                display: flex;
+            }
+
+            #game-container {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body>
     <div id="orientation-warning">
         <h2>Please Rotate Your Device</h2>
         <p>This game is best experienced in landscape mode.</p>
-        <div style="font-size: 40px; margin-top: 20px;">🔄</div>
+        <div id="rotation-icon" style="font-size: 40px; margin-top: 20px;">🔄</div>
     </div>
 
     <div id="game-container">
@@ -420,7 +550,7 @@
                 <div>Arrow Keys: Move | Space: Fist Bump | TAB: Leaderboard | E: Enter Building</div>
                 <div id="connection-status">Disconnected</div>
             </div>
-            
+
             <div id="chat-container">
                 <div id="online-players">Online: ...</div>
                 <div id="chat-messages"></div>
@@ -440,20 +570,36 @@
                 <div id="btn-action" class="control-btn">👊</div>
             </div>
         </div>
-        
+
         <div id="login-screen">
             <div class="login-box">
                 <h1>LEISURE SUIT LARRY MMORPG</h1>
                 <input type="text" id="player-name-input" placeholder="Enter Name" maxlength="12" autofocus>
+
+                <div class="social-input-group">
+                    <div style="color: #00ffff; margin-bottom: 5px; font-size: 14px;">Optional: Social Handle</div>
+                    <div class="social-input-row">
+                        <select id="social-platform">
+                            <option value="twitter">Twitter/X</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="threads">Threads</option>
+                        </select>
+                        <input type="text" id="social-handle" placeholder="@handle" maxlength="30">
+                    </div>
+                </div>
+
                 <br>
                 <button id="join-btn">JOIN GAME</button>
             </div>
         </div>
-        
+
         <div id="phaser-game"></div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script type="module" src="src/main.js"></script>
 </body>
+
 </html>

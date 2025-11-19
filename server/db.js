@@ -9,15 +9,32 @@ const initDB = async () => {
   const client = await pool.connect();
   try {
     console.log('Initializing database...');
-    
+
     // Create players table
     await client.query(`
       CREATE TABLE IF NOT EXISTS players (
         name VARCHAR(255) PRIMARY KEY,
         score INTEGER DEFAULT 0,
         bumped_targets TEXT[] DEFAULT '{}',
-        last_active TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        last_active TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        social_platform VARCHAR(50),
+        social_handle VARCHAR(255)
       );
+      
+      -- Add columns if they don't exist (migration for existing DB)
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE players ADD COLUMN social_platform VARCHAR(50);
+        EXCEPTION
+          WHEN duplicate_column THEN NULL;
+        END;
+        BEGIN
+          ALTER TABLE players ADD COLUMN social_handle VARCHAR(255);
+        EXCEPTION
+          WHEN duplicate_column THEN NULL;
+        END;
+      END $$;
     `);
 
     // Create chat_messages table

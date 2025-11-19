@@ -55,9 +55,11 @@ io.on('connection', async (socket) => {
 
     // Add player to game state
     const playerName = socket.handshake.query.name || 'Anonymous';
-    console.log(`Adding player: ${playerName}`);
+    const socialPlatform = socket.handshake.query.socialPlatform;
+    const socialHandle = socket.handshake.query.socialHandle;
+    console.log(`Adding player: ${playerName} (${socialPlatform}: ${socialHandle})`);
 
-    const player = await gameState.addPlayer(socket.id, playerName);
+    const player = await gameState.addPlayer(socket.id, playerName, socialPlatform, socialHandle);
     console.log(`Player added to game state: ${socket.id}`);
 
     // Send initial game state to new player

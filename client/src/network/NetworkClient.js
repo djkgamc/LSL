@@ -1,8 +1,12 @@
 export class NetworkClient {
-  constructor(serverUrl, playerName) {
+  constructor(serverUrl, playerName, socialPlatform, socialHandle) {
     // Use global io from Socket.io CDN
     this.socket = window.io(serverUrl, {
-      query: { name: playerName },
+      query: {
+        name: playerName,
+        socialPlatform: socialPlatform,
+        socialHandle: socialHandle
+      },
       transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
       reconnection: true,
       reconnectionDelay: 1000,

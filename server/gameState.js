@@ -7,7 +7,7 @@ class GameState {
     this.scenes = ['beach', 'city', 'bar', 'hotel'];
   }
 
-  async addPlayer(socketId, playerName) {
+  async addPlayer(socketId, playerName, socialPlatform, socialHandle) {
     // Random spawn in one of the scenes
     const randomScene = this.scenes[Math.floor(Math.random() * this.scenes.length)];
     const spawnX = 100 + Math.random() * 200; // Random spawn position
@@ -21,16 +21,30 @@ class GameState {
 
     try {
       // Check if player exists
-      const res = await db.pool.query('SELECT score, bumped_targets FROM players WHERE name = $1', [name]);
+      const res = await db.pool.query('SELECT score, bumped_targets, social_platform, social_handle FROM players WHERE name = $1', [name]);
 
       if (res.rows.length > 0) {
         score = res.rows[0].score;
         // Postgres stores arrays as {item1,item2}, but pg parses them to JS arrays if type is correct.
         // We defined bumped_targets as TEXT[], so it should be an array of strings.
         bumpedTargets = new Set(res.rows[0].bumped_targets || []);
+
+        // Update existing player's social info if provided
+        if (socialPlatform && socialHandle) {
+          await db.pool.query(
+            'UPDATE players SET social_platform = $1, social_handle = $2 WHERE name = $3',
+            [socialPlatform, socialHandle, name]
+          );
+          // Update local vars to reflect new info
+          res.rows[0].social_platform = socialPlatform;
+          res.rows[0].social_handle = socialHandle;
+        }
       } else {
         // Create new player entry
-        await db.pool.query('INSERT INTO players (name, score, bumped_targets) VALUES ($1, $2, $3)', [name, 0, []]);
+        await db.pool.query(
+          'INSERT INTO players (name, score, bumped_targets, social_platform, social_handle) VALUES ($1, $2, $3, $4, $5)',
+          [name, 0, [], socialPlatform, socialHandle]
+        );
       }
     } catch (err) {
       console.error('Error loading player data:', err);
@@ -39,7 +53,9 @@ class GameState {
     // Update in-memory map for fast access (optional, but good for performance)
     this.persistentScores.set(name, {
       score: score,
-      bumpedTargets: bumpedTargets
+      bumpedTargets: bumpedTargets,
+      socialPlatform: socialPlatform || (res && res.rows.length > 0 ? res.rows[0].social_platform : null),
+      socialHandle: socialHandle || (res && res.rows.length > 0 ? res.rows[0].social_handle : null)
     });
 
     const player = {
@@ -53,7 +69,9 @@ class GameState {
       color: this.getRandomColor(),
       lastUpdate: Date.now(),
       score: score,
-      bumpedTargets: bumpedTargets
+      bumpedTargets: bumpedTargets,
+      socialPlatform: this.persistentScores.get(name).socialPlatform,
+      socialHandle: this.persistentScores.get(name).socialHandle
     };
 
     this.players.set(socketId, player);
@@ -95,11 +113,13 @@ class GameState {
       .map(([name, data]) => ({
         name: name,
         score: data.score,
+        socialPlatform: data.socialPlatform,
+        socialHandle: data.socialHandle,
         // For the leaderboard ID, we'll use the name since socket ID is transient
         id: name
       }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+      .slice(0, 10);
   }
 
   removePlayer(socketId) {

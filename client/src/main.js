@@ -32,6 +32,8 @@ const config = {
 // Game state
 let game = null;
 let playerName = 'Larry';
+let socialPlatform = null;
+let socialHandle = null;
 let onlinePlayers = [];
 
 // Initialize music manager (audio context needs user interaction)
@@ -53,6 +55,7 @@ const leaderboardToggle = document.getElementById('leaderboard-toggle');
 const scoreEl = document.getElementById('score-display');
 const leaderboardEl = document.getElementById('leaderboard');
 const leaderboardContent = document.getElementById('leaderboard-content');
+const rotationIcon = document.getElementById('rotation-icon');
 
 // Handle Login
 joinBtn.addEventListener('click', startGame);
@@ -83,6 +86,13 @@ if (leaderboardToggle) {
     if (leaderboardEl) {
       leaderboardEl.style.display = leaderboardEl.style.display === 'flex' ? 'none' : 'flex';
     }
+  });
+}
+
+// Handle Rotation Icon Click
+if (rotationIcon) {
+  rotationIcon.addEventListener('click', () => {
+    alert("we can't rotate ur phone for you, you have to turn turn your hand physically");
   });
 }
 
@@ -180,6 +190,58 @@ function renderLeaderboard(data) {
     const nameSpan = document.createElement('span');
     nameSpan.textContent = entry.name;
 
+    // Add social icon if available
+    if (entry.socialPlatform && entry.socialHandle) {
+      const socialLink = document.createElement('a');
+      socialLink.target = '_blank';
+      socialLink.rel = 'noopener noreferrer';
+
+      let iconCode = '';
+      let urlPrefix = '';
+
+      switch (entry.socialPlatform) {
+        case 'twitter':
+          iconCode = '\uf099'; // fa-twitter
+          urlPrefix = 'https://twitter.com/';
+          break;
+        case 'instagram':
+          iconCode = '\uf16d'; // fa-instagram
+          urlPrefix = 'https://instagram.com/';
+          break;
+        case 'facebook':
+          iconCode = '\uf09a'; // fa-facebook
+          urlPrefix = 'https://facebook.com/';
+          break;
+        case 'tiktok':
+          iconCode = '\ue07b'; // fa-tiktok
+          urlPrefix = 'https://tiktok.com/@';
+          break;
+        case 'threads':
+          iconCode = '\ue618'; // fa-threads (approximate, using generic if needed or specific font awesome)
+          // FontAwesome 6.4.2 has threads icon. If not rendering, fallback to link.
+          // Let's assume 6.4.0+ has it.
+          urlPrefix = 'https://www.threads.net/@';
+          break;
+      }
+
+      socialLink.href = urlPrefix + entry.socialHandle.replace('@', '');
+
+      const iconMap = {
+        twitter: 'fa-brands fa-x-twitter',
+        instagram: 'fa-brands fa-instagram',
+        facebook: 'fa-brands fa-facebook',
+        tiktok: 'fa-brands fa-tiktok',
+        threads: 'fa-brands fa-threads'
+      };
+
+      const icon = document.createElement('i');
+      icon.className = iconMap[entry.socialPlatform] || `fa-brands fa-${entry.socialPlatform}`;
+
+      socialLink.appendChild(icon);
+      socialLink.title = `${entry.socialPlatform}: ${entry.socialHandle}`; // Tooltip
+      nameSpan.appendChild(socialLink);
+    }
+
     const scoreSpan = document.createElement('span');
     scoreSpan.textContent = entry.score;
 
@@ -266,8 +328,15 @@ function setupGlobalMobileControls() {
 
 function startGame() {
   const name = nameInput.value.trim();
+  const handle = document.getElementById('social-handle').value.trim();
+  const platform = document.getElementById('social-platform').value;
+
   if (name) {
     playerName = name;
+    if (handle) {
+      socialHandle = handle;
+      socialPlatform = platform;
+    }
     loginScreen.style.display = 'none';
     chatContainer.style.display = 'flex';
 
@@ -291,7 +360,7 @@ function initializeNetwork() {
   const serverUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://lsl-production-0181.up.railway.app';
-  window.networkClient = new NetworkClient(serverUrl, playerName);
+  window.networkClient = new NetworkClient(serverUrl, playerName, socialPlatform, socialHandle);
 
   // Update connection status UI
   window.networkClient.on('connected', () => {
