@@ -28,22 +28,22 @@ export class BuildingInterior extends Phaser.Scene {
     // Interior background - Dark gradients
     createGradientTexture(this, 'interiorBg', 1920, 1080, 0x000000, 0x1a0b2e);
     this.add.image(960, 540, 'interiorBg').setDepth(-100);
-    
+
     // Checkerboard Floor
     this.createFloor();
-    
+
     // Interior decorations based on building type
     // Generate random properties based on buildingId
     const seed = this.buildingId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const rand = (idx) => {
-        const x = Math.sin(seed + idx) * 10000;
-        return x - Math.floor(x);
+      const x = Math.sin(seed + idx) * 10000;
+      return x - Math.floor(x);
     };
 
     if (this.buildingType === 'bar') {
       const barName = this.buildingId.replace(/_/g, ' ').toUpperCase();
       const barColor = rand(1) > 0.5 ? '#FF00FF' : '#00FFFF';
-      
+
       // Neon Bar Sign
       const title = this.add.text(960, 200, barName, {
         fontSize: '48px',
@@ -54,19 +54,19 @@ export class BuildingInterior extends Phaser.Scene {
         shadow: { blur: 20, color: barColor, fill: true }
       });
       title.setOrigin(0.5);
-      
+
       // Bar counter with neon edge
       const counter = this.add.rectangle(960, 700, 600, 150, 0x000000);
       counter.setStrokeStyle(4, parseInt(barColor.replace('#', '0x')));
-      
+
       // Shelves
       for (let i = 0; i < 3; i++) {
         this.add.rectangle(960, 500 + i * 50, 500, 10, 0x333333);
       }
-      
+
       // Add some "bottles" (colored rectangles)
       for (let i = 0; i < 20; i++) {
-        const color = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00][Math.floor(rand(i+10) * 4)];
+        const color = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00][Math.floor(rand(i + 10) * 4)];
         this.add.rectangle(750 + i * 25, 480 + (i % 3) * 50, 10, 20, color);
       }
 
@@ -84,17 +84,17 @@ export class BuildingInterior extends Phaser.Scene {
         shadow: { blur: 20, color: hotelColor, fill: true }
       });
       title.setOrigin(0.5);
-      
+
       // Reception desk
       const desk = this.add.rectangle(960, 700, 500, 120, 0x222222);
       desk.setStrokeStyle(4, parseInt(hotelColor.replace('#', '0x')));
-      
+
       // Plants
       const plantColor = rand(3) > 0.5 ? 0x00ff00 : 0x00cc00;
       this.add.circle(650, 680, 40, plantColor).setDepth(-1);
       this.add.circle(1270, 680, 40, plantColor).setDepth(-1);
     }
-    
+
     // Exit sign (Neon style)
     const exitText = this.add.text(100, 100, 'EXIT (E)', {
       fontSize: '24px',
@@ -104,29 +104,36 @@ export class BuildingInterior extends Phaser.Scene {
       strokeThickness: 2,
       shadow: { blur: 10, color: '#ff0055', fill: true }
     });
-    
+
     // Create local player at entrance
     this.createPlayer();
-    
+
     // Initialize remotePlayers array (even if empty) to prevent Player crashes
     this.remotePlayers = [];
-    
+
     // Setup exit
     this.exitKey = this.input.keyboard.addKey('E');
-    
+
     // Play building music
     window.musicManager.playSceneMusic('building');
 
     // Add Techno Cats
     this.createCats();
-    
+
     // Fist bump key
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    
+
     // Exit state
     this.isExiting = false;
-    
-    // this.events.on('shutdown', this.cleanupMobileControls, this);
+
+    // Network handling
+    this.networkHandlers = null;
+    this.setupNetworkEvents();
+
+    this.events.on('shutdown', () => {
+      this.cleanupNetworkEvents();
+      // this.cleanupMobileControls();
+    }, this);
   }
 
   // cleanupMobileControls() { ... }
@@ -134,185 +141,185 @@ export class BuildingInterior extends Phaser.Scene {
   createCats() {
     this.cats = [];
     const catCount = 5;
-    
-    for (let i = 0; i < catCount; i++) {
-        const x = 600 + Math.random() * 800; // Random positions
-        const y = 800 + Math.random() * 50;
-        
-        const container = this.add.container(x, y);
-        container.setDepth(10); 
-        
-        // Cat Body Colors
-        const bodyColor = [0x333333, 0xffffff, 0xffcc00, 0x999999][Math.floor(Math.random() * 4)];
-        
-        // --- Improved Cat Visuals ---
-        
-        // 1. Back Legs / Haunches (Sitting posture base)
-        const haunches = this.add.ellipse(0, 10, 34, 24, bodyColor);
-        
-        // 2. Front Body/Chest
-        const chest = this.add.rectangle(0, 2, 20, 25, bodyColor);
-        
-        // 3. Front Legs
-        const legL = this.add.rectangle(-6, 18, 6, 14, bodyColor);
-        const legR = this.add.rectangle(6, 18, 6, 14, bodyColor);
-        
-        // 4. Head
-        const head = this.add.ellipse(0, -12, 28, 24, bodyColor);
-        
-        // 5. Ears
-        // Triangle points relative to center (0,0)
-        const earLeft = this.add.triangle(-8, -22, 0, 0, -6, 12, 6, 12, bodyColor);
-        const earRight = this.add.triangle(8, -22, 0, 0, -6, 12, 6, 12, bodyColor);
-        
-        // 6. Tail
-        const tail = this.add.rectangle(12, 10, 25, 6, bodyColor);
-        tail.setOrigin(0, 0.5);
-        tail.setRotation(-0.5);
-        
-        // 7. Face
-        // Eyes
-        const eyeColor = 0x00ff00; // Laser eyes for techno
-        const eyeLeft = this.add.circle(-5, -14, 2.5, eyeColor); 
-        const eyeRight = this.add.circle(5, -14, 2.5, eyeColor);
-        
-        // Nose
-        const nose = this.add.triangle(0, -10, 0, 0, -2.5, -2.5, 2.5, -2.5, 0xffaec9); // Pink nose
-        
-        // Whiskers (using Graphics)
-        const whiskers = this.add.graphics();
-        whiskers.lineStyle(1, 0xdddddd);
-        // Right whiskers
-        whiskers.moveTo(4, -9); whiskers.lineTo(18, -11);
-        whiskers.moveTo(4, -9); whiskers.lineTo(18, -8);
-        // Left whiskers
-        whiskers.moveTo(-4, -9); whiskers.lineTo(-18, -11);
-        whiskers.moveTo(-4, -9); whiskers.lineTo(-18, -8);
-        whiskers.strokePath();
 
-        container.add([tail, haunches, chest, legL, legR, head, earLeft, earRight, eyeLeft, eyeRight, nose, whiskers]);
-        
-        // Store properties for animation
-        container.initialY = y;
-        container.tail = tail;
-        container.phase = Math.random() * Math.PI * 2; 
-        container.id = `${this.buildingId}_cat_${i}`;
-        
-        this.cats.push(container);
+    for (let i = 0; i < catCount; i++) {
+      const x = 600 + Math.random() * 800; // Random positions
+      const y = 800 + Math.random() * 50;
+
+      const container = this.add.container(x, y);
+      container.setDepth(10);
+
+      // Cat Body Colors
+      const bodyColor = [0x333333, 0xffffff, 0xffcc00, 0x999999][Math.floor(Math.random() * 4)];
+
+      // --- Improved Cat Visuals ---
+
+      // 1. Back Legs / Haunches (Sitting posture base)
+      const haunches = this.add.ellipse(0, 10, 34, 24, bodyColor);
+
+      // 2. Front Body/Chest
+      const chest = this.add.rectangle(0, 2, 20, 25, bodyColor);
+
+      // 3. Front Legs
+      const legL = this.add.rectangle(-6, 18, 6, 14, bodyColor);
+      const legR = this.add.rectangle(6, 18, 6, 14, bodyColor);
+
+      // 4. Head
+      const head = this.add.ellipse(0, -12, 28, 24, bodyColor);
+
+      // 5. Ears
+      // Triangle points relative to center (0,0)
+      const earLeft = this.add.triangle(-8, -22, 0, 0, -6, 12, 6, 12, bodyColor);
+      const earRight = this.add.triangle(8, -22, 0, 0, -6, 12, 6, 12, bodyColor);
+
+      // 6. Tail
+      const tail = this.add.rectangle(12, 10, 25, 6, bodyColor);
+      tail.setOrigin(0, 0.5);
+      tail.setRotation(-0.5);
+
+      // 7. Face
+      // Eyes
+      const eyeColor = 0x00ff00; // Laser eyes for techno
+      const eyeLeft = this.add.circle(-5, -14, 2.5, eyeColor);
+      const eyeRight = this.add.circle(5, -14, 2.5, eyeColor);
+
+      // Nose
+      const nose = this.add.triangle(0, -10, 0, 0, -2.5, -2.5, 2.5, -2.5, 0xffaec9); // Pink nose
+
+      // Whiskers (using Graphics)
+      const whiskers = this.add.graphics();
+      whiskers.lineStyle(1, 0xdddddd);
+      // Right whiskers
+      whiskers.moveTo(4, -9); whiskers.lineTo(18, -11);
+      whiskers.moveTo(4, -9); whiskers.lineTo(18, -8);
+      // Left whiskers
+      whiskers.moveTo(-4, -9); whiskers.lineTo(-18, -11);
+      whiskers.moveTo(-4, -9); whiskers.lineTo(-18, -8);
+      whiskers.strokePath();
+
+      container.add([tail, haunches, chest, legL, legR, head, earLeft, earRight, eyeLeft, eyeRight, nose, whiskers]);
+
+      // Store properties for animation
+      container.initialY = y;
+      container.tail = tail;
+      container.phase = Math.random() * Math.PI * 2;
+      container.id = `${this.buildingId}_cat_${i}`;
+
+      this.cats.push(container);
     }
   }
 
   updateCats(time) {
     if (!this.cats) return;
-    
+
     // Techno tempo ~135 BPM
-    const beat = (time / 1000) * (135/60) * Math.PI * 2;
-    
+    const beat = (time / 1000) * (135 / 60) * Math.PI * 2;
+
     this.cats.forEach((cat, index) => {
-        // Bobbing body
-        const bounce = Math.sin(beat + cat.phase) * 8;
-        cat.y = cat.initialY + bounce;
-        
-        // Head bang (rotation)
-        cat.rotation = Math.sin(beat * 2 + cat.phase) * 0.05;
-        
-        // Tail Wag
-        if (cat.tail) {
-            cat.tail.rotation = -0.5 + Math.sin(beat + cat.phase) * 0.5;
-        }
-        
-        // Occasional Jump
-        if (Math.random() > 0.995) {
-            cat.y -= 30;
-        }
+      // Bobbing body
+      const bounce = Math.sin(beat + cat.phase) * 8;
+      cat.y = cat.initialY + bounce;
+
+      // Head bang (rotation)
+      cat.rotation = Math.sin(beat * 2 + cat.phase) * 0.05;
+
+      // Tail Wag
+      if (cat.tail) {
+        cat.tail.rotation = -0.5 + Math.sin(beat + cat.phase) * 0.5;
+      }
+
+      // Occasional Jump
+      if (Math.random() > 0.995) {
+        cat.y -= 30;
+      }
     });
   }
 
   checkCatInteraction() {
     if (!this.localPlayer || !this.cats) return;
-    
+
     const playerX = this.localPlayer.x;
     const playerY = this.localPlayer.y;
-    
+
     let interacted = false;
 
     this.cats.forEach(cat => {
-        const dist = Phaser.Math.Distance.Between(playerX, playerY, cat.x, cat.y);
-        
-        if (dist < 100) {
-            // Fist bump!
-            this.triggerCatFistBump(cat);
-            
-            // Also trigger player animation
-            if (this.localPlayer) {
-                this.localPlayer.triggerFistBump();
-            }
-            interacted = true;
+      const dist = Phaser.Math.Distance.Between(playerX, playerY, cat.x, cat.y);
+
+      if (dist < 100) {
+        // Fist bump!
+        this.triggerCatFistBump(cat);
+
+        // Also trigger player animation
+        if (this.localPlayer) {
+          this.localPlayer.triggerFistBump();
         }
+        interacted = true;
+      }
     });
-    
+
     return interacted;
   }
 
   triggerCatFistBump(cat) {
     // Visual feedback
     const text = this.add.text(cat.x, cat.y - 50, 'FIST BUMP!', {
-        fontSize: '20px',
-        fontFamily: 'Courier New',
-        color: '#00ff00',
-        stroke: '#000000',
-        strokeThickness: 3
+      fontSize: '20px',
+      fontFamily: 'Courier New',
+      color: '#00ff00',
+      stroke: '#000000',
+      strokeThickness: 3
     });
     text.setOrigin(0.5);
-    
+
     // Animate text up and fade
     this.tweens.add({
-        targets: text,
-        y: cat.y - 100,
-        alpha: 0,
-        duration: 1000,
-        onComplete: () => text.destroy()
+      targets: text,
+      y: cat.y - 100,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => text.destroy()
     });
-    
+
     // Cat reaction: Spin
     this.tweens.add({
-        targets: cat,
-        scaleX: 1.5,
-        scaleY: 1.5,
-        duration: 200,
-        yoyo: true,
-        ease: 'Bounce.easeOut'
+      targets: cat,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 200,
+      yoyo: true,
+      ease: 'Bounce.easeOut'
     });
 
     // Emit network event for fist bump so others see it (optional, maybe just local for now)
     if (window.networkClient) {
-        window.networkClient.fistBump(cat.id, 'cat');
+      window.networkClient.fistBump(cat.id, 'cat');
     }
   }
 
   createFloor() {
     const graphics = this.add.graphics();
     const floorY = 800;
-    
+
     // Draw checkerboard in perspective
     for (let y = 0; y < 10; y++) {
       for (let x = -10; x < 20; x++) {
         const color = (x + y) % 2 === 0 ? 0x2c1e4a : 0x000000; // Dark purple / Black
         graphics.fillStyle(color, 1);
-        
+
         // Simple perspective projection
         const scale = 1 + y * 0.2;
         const w = 100 * scale;
         const h = 40 * scale;
         const px = 960 + (x - 5) * w;
         const py = floorY + y * h * 0.5;
-        
+
         // Draw quad (simplified as rect for now)
         graphics.fillRect(px, py, w, h);
       }
     }
     graphics.setDepth(-50);
-    
+
     // Physics floor (invisible)
     const ground = this.add.rectangle(960, 980, 1920, 200, 0x000000, 0);
     this.physics.add.existing(ground, true);
@@ -330,25 +337,35 @@ export class BuildingInterior extends Phaser.Scene {
         'hotel': 'HotelScene'
       };
       const sceneKey = sceneMap[this.returnScene] || 'BeachScene';
-      
+
       // Get player data from previous scene
       const previousScene = this.scene.get(sceneKey);
       let playerData = {
-          id: networkClient.getPlayerId(),
-          name: 'Player',
-          color: 0xff6b6b,
-          isLocal: true
+        id: networkClient.getPlayerId(),
+        name: 'Player',
+        color: 0xff6b6b,
+        isLocal: true
       };
 
       if (previousScene && previousScene.localPlayer) {
         playerData = { ...previousScene.localPlayer.playerData, isLocal: true };
       }
-      
+
       this.localPlayer = new Player(this, 200, 800, playerData);
-      
+
       // Camera follow
       this.cameras.main.setBounds(0, 0, 1920, 1080);
       this.cameras.main.startFollow(this.localPlayer, true, 0.1, 0.1);
+
+      // Immediately sync position/presence in the building
+      // Since we just entered, the server knows we are here (from enterBuilding),
+      // but we should ensure our local coordinates are sent if they differ from spawn.
+      window.networkClient.sendPlayerMove({
+        x: this.localPlayer.x,
+        y: this.localPlayer.y,
+        facing: this.localPlayer.facing,
+        animState: 'idle'
+      });
     }
   }
 
@@ -356,19 +373,26 @@ export class BuildingInterior extends Phaser.Scene {
     if (this.localPlayer) {
       this.localPlayer.update(time, delta);
     }
-    
+
     // Check for exit
     if (Phaser.Input.Keyboard.JustDown(this.exitKey)) {
       this.exitBuilding();
     }
-    
+
     // Update cats
     this.updateCats(time);
+
+    // Update remote players
+    this.remotePlayers.forEach(player => {
+      if (player && player.active) {
+        player.update(time, delta);
+      }
+    });
   }
 
   handlePlayerInput(key) {
     if (key === 'space') {
-        return this.checkCatInteraction();
+      return this.checkCatInteraction();
     }
     return false;
   }
@@ -376,11 +400,11 @@ export class BuildingInterior extends Phaser.Scene {
   // setupMobileControls() { ... }
 
   onMobileAction(action) {
-      console.log('BuildingInterior onMobileAction:', action);
-      if (action === 'enter') this.exitBuilding();
-      if (action === 'action' && this.localPlayer) {
-          if (!this.checkCatInteraction()) this.localPlayer.attemptFistBump();
-      }
+    console.log('BuildingInterior onMobileAction:', action);
+    if (action === 'enter') this.exitBuilding();
+    if (action === 'action' && this.localPlayer) {
+      if (!this.checkCatInteraction()) this.localPlayer.attemptFistBump();
+    }
   }
 
   exitBuilding() {
@@ -392,11 +416,11 @@ export class BuildingInterior extends Phaser.Scene {
     const exitY = 900; // Force ground level to avoid sky-spawning
 
     if (this.localPlayer) {
-      window.networkClient.exitBuilding(this.localPlayer.x, this.localPlayer.y);
+      window.networkClient.exitBuilding(exitX, exitY, this.returnScene);
     } else {
-      window.networkClient.exitBuilding(exitX, exitY);
+      window.networkClient.exitBuilding(exitX, exitY, this.returnScene);
     }
-    
+
     // Switch scene
     const sceneMap = {
       'beach': 'BeachScene',
@@ -405,7 +429,7 @@ export class BuildingInterior extends Phaser.Scene {
       'hotel': 'HotelScene'
     };
     const sceneKey = sceneMap[this.returnScene] || 'BeachScene';
-    
+
     // Pass player data back
     let playerData = this.localPlayer ? this.localPlayer.playerData : {};
     playerData.x = exitX;
@@ -417,5 +441,147 @@ export class BuildingInterior extends Phaser.Scene {
       returnY: exitY,
       player: playerData
     });
+  }
+
+
+  setupNetworkEvents() {
+    const networkClient = window.networkClient;
+    if (!networkClient) return;
+
+    this.networkHandlers = {
+      playerJoined: (player) => {
+        // In building, we only care if they are in the same building type/id
+        // But currently server only tracks 'scene'. 
+        // The server sets scene='bar' or 'hotel'.
+        if (player.scene === this.buildingType && player.id !== networkClient.getPlayerId()) {
+          this.addRemotePlayer(player);
+        }
+      },
+      playerJoinedScene: (player) => {
+        console.log(`[BuildingInterior] playerJoinedScene: ${player.id} joined scene ${player.scene} (local: ${this.buildingType})`);
+        if (player.scene === this.buildingType && player.id !== networkClient.getPlayerId()) {
+          this.addRemotePlayer(player);
+        }
+      },
+      playerLeft: (data) => {
+        this.removeRemotePlayer(data.id);
+      },
+      playerLeftScene: (data) => {
+        console.log(`[BuildingInterior] playerLeftScene: ${data.id} left scene`);
+        this.removeRemotePlayer(data.id);
+      },
+      sceneState: (data) => {
+        console.log(`[BuildingInterior] sceneState: received ${data.players?.length || 0} players`);
+        if (data.players) {
+          this.addRemotePlayers(data.players.filter(p => p.id !== networkClient.getPlayerId()));
+        }
+      },
+      playerUpdate: (player) => {
+        if (player.scene === this.buildingType && player.id !== networkClient.getPlayerId()) {
+          this.updateRemotePlayer(player);
+        }
+      },
+      sceneSync: (data) => {
+        if (data.players) {
+          this.syncPlayers(data.players);
+        }
+      },
+      fistBumpAnimation: (data) => {
+        this.handleFistBumpAnimation(data);
+      }
+    };
+
+    Object.entries(this.networkHandlers).forEach(([event, handler]) => {
+      networkClient.on(event, handler);
+    });
+  }
+
+  cleanupNetworkEvents() {
+    if (!this.networkHandlers) return;
+    const networkClient = window.networkClient;
+    if (networkClient) {
+      Object.entries(this.networkHandlers).forEach(([event, handler]) => {
+        networkClient.off(event, handler);
+      });
+    }
+    this.networkHandlers = null;
+  }
+
+  addRemotePlayer(playerData) {
+    const existing = this.remotePlayers.find(p => p.playerData.id === playerData.id);
+    if (existing) {
+      existing.updateFromNetwork(playerData);
+      return;
+    }
+
+    // For interior, we might need to adjust coordinates if they are global?
+    // Server sends global coordinates. 
+    // If players are in the same building, they should have valid coordinates for that building.
+    const remotePlayer = new RemotePlayer(this, playerData.x, playerData.y, playerData);
+    this.remotePlayers.push(remotePlayer);
+  }
+
+  addRemotePlayers(players) {
+    players.forEach(player => {
+      if (player.scene === this.buildingType) {
+        this.addRemotePlayer(player);
+      }
+    });
+  }
+
+  removeRemotePlayer(playerId) {
+    const index = this.remotePlayers.findIndex(p => p.playerData.id === playerId);
+    if (index !== -1) {
+      this.remotePlayers[index].destroy();
+      this.remotePlayers.splice(index, 1);
+    }
+  }
+
+  updateRemotePlayer(playerData) {
+    const remotePlayer = this.remotePlayers.find(p => p.playerData.id === playerData.id);
+    if (remotePlayer) {
+      remotePlayer.updateFromNetwork(playerData);
+    }
+  }
+
+  syncPlayers(players) {
+    const networkClient = window.networkClient;
+    const localPlayerId = networkClient.getPlayerId();
+
+    // Filter for players in this building type
+    const relevantPlayers = players.filter(p => p.scene === this.buildingType);
+
+    relevantPlayers.forEach(player => {
+      if (player.id !== localPlayerId) {
+        this.updateRemotePlayer(player);
+        // If not found, add it
+        if (!this.remotePlayers.find(p => p.playerData.id === player.id)) {
+          this.addRemotePlayer(player);
+        }
+      }
+    });
+
+    // Remove missing
+    const activeIds = relevantPlayers.map(p => p.id);
+    this.remotePlayers.forEach(rp => {
+      if (rp.playerData.id !== localPlayerId && !activeIds.includes(rp.playerData.id)) {
+        this.removeRemotePlayer(rp.playerData.id);
+      }
+    });
+  }
+
+  handleFistBumpAnimation(data) {
+    if (this.localPlayer && this.localPlayer.playerData.id === data.player1Id) {
+      this.localPlayer.triggerFistBump();
+    }
+    if (this.localPlayer && this.localPlayer.playerData.id === data.player2Id) {
+      this.localPlayer.triggerFistBump();
+    }
+
+    const player1 = this.remotePlayers.find(p => p.playerData.id === data.player1Id);
+    const player2 = this.remotePlayers.find(p => p.playerData.id === data.player2Id);
+
+    if (player1) player1.triggerFistBump();
+    if (player2) player2.triggerFistBump();
   }
 }

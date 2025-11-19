@@ -94,6 +94,10 @@ export class NetworkClient {
     this.socket.on('leaderboardUpdate', (data) => {
       this.emit('leaderboardUpdate', data);
     });
+
+    this.socket.on('chatHistory', (data) => {
+      this.emit('chatHistory', data);
+    });
   }
 
   on(event, callback) {
@@ -141,9 +145,9 @@ export class NetworkClient {
     }
   }
 
-  exitBuilding(x, y) {
+  exitBuilding(x, y, targetScene) {
     if (this.connected) {
-      this.socket.emit('exitBuilding', { x, y });
+      this.socket.emit('exitBuilding', { x, y, targetScene });
     }
   }
 

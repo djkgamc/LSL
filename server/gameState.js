@@ -1,3 +1,5 @@
+const db = require('./db');
+
 class GameState {
   constructor() {
     this.players = new Map(); // socketId -> player data
@@ -5,7 +7,7 @@ class GameState {
     this.scenes = ['beach', 'city', 'bar', 'hotel'];
   }
 
-  addPlayer(socketId, playerName) {
+  async addPlayer(socketId, playerName) {
     // Random spawn in one of the scenes
     const randomScene = this.scenes[Math.floor(Math.random() * this.scenes.length)];
     const spawnX = 100 + Math.random() * 200; // Random spawn position
@@ -13,14 +15,32 @@ class GameState {
 
     const name = playerName || `Player_${socketId.substring(0, 6)}`;
 
-    // Initialize or retrieve persistent score
-    if (!this.persistentScores.has(name)) {
-      this.persistentScores.set(name, {
-        score: 0,
-        bumpedTargets: new Set()
-      });
+    // Initialize or retrieve persistent score from DB
+    let score = 0;
+    let bumpedTargets = new Set();
+
+    try {
+      // Check if player exists
+      const res = await db.pool.query('SELECT score, bumped_targets FROM players WHERE name = $1', [name]);
+
+      if (res.rows.length > 0) {
+        score = res.rows[0].score;
+        // Postgres stores arrays as {item1,item2}, but pg parses them to JS arrays if type is correct.
+        // We defined bumped_targets as TEXT[], so it should be an array of strings.
+        bumpedTargets = new Set(res.rows[0].bumped_targets || []);
+      } else {
+        // Create new player entry
+        await db.pool.query('INSERT INTO players (name, score, bumped_targets) VALUES ($1, $2, $3)', [name, 0, []]);
+      }
+    } catch (err) {
+      console.error('Error loading player data:', err);
     }
-    const persistentData = this.persistentScores.get(name);
+
+    // Update in-memory map for fast access (optional, but good for performance)
+    this.persistentScores.set(name, {
+      score: score,
+      bumpedTargets: bumpedTargets
+    });
 
     const player = {
       id: socketId,
@@ -32,18 +52,18 @@ class GameState {
       animState: 'idle',
       color: this.getRandomColor(),
       lastUpdate: Date.now(),
-      score: persistentData.score,
-      bumpedTargets: persistentData.bumpedTargets
+      score: score,
+      bumpedTargets: bumpedTargets
     };
 
     this.players.set(socketId, player);
     return player;
   }
 
-  incrementScore(socketId, uniqueTargetId) {
+  async incrementScore(socketId, uniqueTargetId) {
     const player = this.players.get(socketId);
     if (!player) return false;
-    
+
     // Access persistent data directly to ensure updates persist
     const persistentData = this.persistentScores.get(player.name);
     if (!persistentData) return false;
@@ -51,9 +71,20 @@ class GameState {
     if (!persistentData.bumpedTargets.has(uniqueTargetId)) {
       persistentData.bumpedTargets.add(uniqueTargetId);
       persistentData.score += 1;
-      
-      // Sync back to active player object (though they share the Set reference, score is primitive)
+
+      // Sync back to active player object
       player.score = persistentData.score;
+
+      // Persist to DB
+      try {
+        await db.pool.query(
+          'UPDATE players SET score = $1, bumped_targets = $2, last_active = CURRENT_TIMESTAMP WHERE name = $3',
+          [persistentData.score, Array.from(persistentData.bumpedTargets), player.name]
+        );
+      } catch (err) {
+        console.error('Error updating score:', err);
+      }
+
       return true;
     }
     return false;
@@ -65,7 +96,7 @@ class GameState {
         name: name,
         score: data.score,
         // For the leaderboard ID, we'll use the name since socket ID is transient
-        id: name 
+        id: name
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
@@ -85,7 +116,7 @@ class GameState {
     if (data.scene !== undefined) player.scene = data.scene;
     if (data.facing !== undefined) player.facing = data.facing;
     if (data.animState !== undefined) player.animState = data.animState;
-    
+
     player.lastUpdate = Date.now();
     return player;
   }
