@@ -55,8 +55,17 @@ io.on('connection', async (socket) => {
 
     // Add player to game state
     const playerName = socket.handshake.query.name || 'Anonymous';
-    const socialPlatform = socket.handshake.query.socialPlatform;
-    const socialHandle = socket.handshake.query.socialHandle;
+
+    // Normalize social parameters - Socket.IO may send 'null', 'undefined', or empty strings
+    const normalizeSocialParam = (param) => {
+      if (!param || param === 'null' || param === 'undefined' || param.trim() === '') {
+        return null;
+      }
+      return param.trim();
+    };
+
+    const socialPlatform = normalizeSocialParam(socket.handshake.query.socialPlatform);
+    const socialHandle = normalizeSocialParam(socket.handshake.query.socialHandle);
     console.log(`Adding player: ${playerName} (${socialPlatform}: ${socialHandle})`);
 
     const player = await gameState.addPlayer(socket.id, playerName, socialPlatform, socialHandle);
