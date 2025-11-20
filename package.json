@@ -6,13 +6,19 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && node index.js",
-    "client": "cd client && npm start"
+    "client": "cd client && npm start",
+    "test": "node --test tests/*.test.js"
   },
-  "keywords": ["mmorpg", "leisure-suit-larry", "phaser", "socket.io"],
+  "keywords": [
+    "mmorpg",
+    "leisure-suit-larry",
+    "phaser",
+    "socket.io"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "mock-require": "^3.0.3"
   }
 }
-

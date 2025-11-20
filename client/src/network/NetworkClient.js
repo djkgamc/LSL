@@ -174,6 +174,12 @@ export class NetworkClient {
     }
   }
 
+  sendDateResult(data) {
+    if (this.connected) {
+      this.socket.emit('dateResult', data);
+    }
+  }
+
   getPlayerId() {
     return this.playerId;
   }

@@ -98,6 +98,13 @@ export class Player extends Phaser.GameObjects.Container {
   update(time, delta) {
     if (!this.isLocal) return; // Remote players are updated via network
 
+    if (this.scene.inputLocked) {
+      this.body.setVelocity(0);
+      this.animState = 'idle';
+      this.updateVisuals(time);
+      return;
+    }
+
     let moved = false;
     let newFacing = this.facing;
     let newAnimState = 'idle';

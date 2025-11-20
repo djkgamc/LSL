@@ -256,6 +256,18 @@ io.on('connection', async (socket) => {
       }
     });
 
+    socket.on('dateResult', async (data) => {
+      const points = Number(data?.points) || 0;
+      if (points <= 0) return;
+
+      const scoreChanged = await gameState.addScore(socket.id, points);
+      if (scoreChanged) {
+        const updatedPlayer = gameState.getPlayer(socket.id);
+        socket.emit('scoreUpdate', { score: updatedPlayer.score });
+        io.emit('leaderboardUpdate', gameState.getLeaderboard());
+      }
+    });
+
     // Handle chat
     socket.on('chatMessage', async (data) => {
       const player = gameState.getPlayer(socket.id);

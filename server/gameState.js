@@ -137,6 +137,28 @@ class GameState {
     return false;
   }
 
+  async addScore(socketId, amount) {
+    const player = this.players.get(socketId);
+    if (!player) return false;
+
+    const persistentData = this.persistentScores.get(player.name);
+    if (!persistentData) return false;
+
+    persistentData.score += amount;
+    player.score = persistentData.score;
+
+    try {
+      await db.pool.query(
+        'UPDATE players SET score = $1, last_active = CURRENT_TIMESTAMP WHERE name = $2',
+        [persistentData.score, player.name]
+      );
+    } catch (err) {
+      console.error('Error updating score:', err);
+    }
+
+    return true;
+  }
+
   getLeaderboard() {
     return Array.from(this.persistentScores.entries())
       .map(([name, data]) => ({

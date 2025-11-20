@@ -469,6 +469,154 @@
             border-bottom: none;
         }
 
+        /* Date overlay */
+        #date-overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1200;
+        }
+
+        #date-overlay.visible {
+            display: flex;
+        }
+
+        #date-heart-fog {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 0, 255, 0.15), transparent 45%),
+                        radial-gradient(circle at 70% 20%, rgba(0, 255, 255, 0.12), transparent 40%),
+                        radial-gradient(circle at 50% 70%, rgba(255, 192, 203, 0.14), transparent 45%);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #date-heart-fog.success { background-color: rgba(255, 105, 180, 0.08); opacity: 1; }
+        #date-heart-fog.fail { background-color: rgba(255, 0, 0, 0.05); opacity: 1; }
+
+        #date-panel {
+            position: relative;
+            width: 520px;
+            max-width: 90%;
+            background: rgba(26, 11, 46, 0.92);
+            border: 3px solid #ff00ff;
+            box-shadow: 0 0 30px #ff00ff;
+            padding: 24px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        #date-partner-visual {
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 180px;
+            height: 220px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35), transparent 48%),
+                        linear-gradient(160deg, rgba(255, 0, 128, 0.35) 0%, rgba(0, 255, 255, 0.25) 100%);
+            clip-path: polygon(60% 0%, 80% 15%, 90% 30%, 85% 45%, 70% 65%, 50% 100%, 35% 70%, 25% 50%, 28% 28%, 40% 10%);
+            opacity: 0.8;
+            filter: drop-shadow(0 0 12px rgba(255, 0, 255, 0.6));
+            animation: sway 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        #date-partner-visual.vibe-hotel { filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.75)); }
+        #date-partner-visual.vibe-bar { filter: drop-shadow(0 0 14px rgba(255, 0, 255, 0.8)); }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(-2deg) scale(1); }
+            50% { transform: rotate(2deg) scale(1.03); }
+        }
+
+        #date-partner {
+            font-size: 22px;
+            color: #00ffff;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 1px 1px 0 #000;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        #date-partner .partner-name {
+            font-size: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        #date-partner .partner-accent {
+            color: #ff99ff;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #date-partner .partner-vibe {
+            font-size: 14px;
+            color: #b3f8ff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        }
+
+        #date-dialogue {
+            font-size: 18px;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        #date-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .date-option {
+            width: 100%;
+            text-align: left;
+            background: linear-gradient(90deg, #ff00ff 0%, #00ffff 100%);
+            border: none;
+            color: #0a0016;
+            padding: 12px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(255, 0, 255, 0.6);
+        }
+
+        .date-option:hover {
+            transform: translateY(-2px);
+        }
+
+        #date-toast {
+            margin-top: 12px;
+            color: #ffddff;
+            font-size: 16px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        #date-toast.hidden { display: none; }
+
+        #date-result {
+            margin-top: 12px;
+            font-size: 18px;
+            color: #ffffff;
+        }
+
+        #date-result.hidden { display: none; }
+
+        #date-hint {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #aaaaaa;
+            text-align: center;
+        }
+
         @media (max-width: 1024px) {
             #mobile-controls {
                 display: block;
