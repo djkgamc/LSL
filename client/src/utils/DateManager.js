@@ -43,7 +43,6 @@ export class DateManager {
         <div id="date-options"></div>
         <div id="date-toast" class="hidden"></div>
         <div id="date-result" class="hidden"></div>
-        <div id="date-hint">Space = fist bump cameo • E = exit or start another date</div>
       </div>
     `;
     document.body.appendChild(overlay);
