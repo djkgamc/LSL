@@ -1,6 +1,7 @@
 import { Player } from '../entities/Player.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { PALETTE, createGradientTexture } from '../utils/Visuals.js';
+import { DateManager } from '../utils/DateManager.js';
 
 export class BuildingInterior extends Phaser.Scene {
   constructor() {
@@ -31,6 +32,9 @@ export class BuildingInterior extends Phaser.Scene {
 
     // Checkerboard Floor
     this.createFloor();
+
+    // Input lock flag for in-room overlays
+    this.inputLocked = false;
 
     // Interior decorations based on building type
     // Generate random properties based on buildingId
@@ -119,6 +123,10 @@ export class BuildingInterior extends Phaser.Scene {
 
     // Add Techno Cats
     this.createCats();
+
+    // Date booth and dialogue system
+    this.createDateBooth();
+    this.dateManager = new DateManager(this);
 
     // Fist bump key
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -297,6 +305,55 @@ export class BuildingInterior extends Phaser.Scene {
     }
   }
 
+  createDateBooth() {
+    this.dateBooth = this.add.rectangle(1400, 760, 220, 120, 0xff66aa, 0.25);
+    this.dateBooth.setStrokeStyle(3, 0xff00ff, 0.8);
+    this.dateBooth.setDepth(5);
+
+    this.datePartner = this.add.text(this.dateBooth.x, this.dateBooth.y - 80, 'DATE SPOT', {
+      fontSize: '26px',
+      fontFamily: 'Courier New',
+      color: '#ffffff',
+      stroke: '#ff00ff',
+      strokeThickness: 4,
+      shadow: { blur: 10, color: '#ff00ff', fill: true }
+    });
+    this.datePartner.setOrigin(0.5);
+    this.datePartner.setDepth(6);
+
+    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, 'Press E to start a neon date', {
+      fontSize: '18px',
+      fontFamily: 'Courier New',
+      color: '#ffddff',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: { x: 8, y: 6 }
+    });
+    this.datePrompt.setOrigin(0.5);
+    this.datePrompt.setDepth(7);
+    this.datePrompt.setVisible(false);
+  }
+
+  updateDateBoothPrompt() {
+    if (!this.localPlayer || !this.dateBooth || !this.dateManager) return;
+
+    const dist = Phaser.Math.Distance.Between(this.localPlayer.x, this.localPlayer.y, this.dateBooth.x, this.dateBooth.y);
+    const canPrompt = dist < 200 && !this.dateManager.isActive();
+    this.datePrompt.setVisible(canPrompt);
+    if (canPrompt) {
+      this.datePrompt.setPosition(this.dateBooth.x, this.dateBooth.y - 130);
+    }
+  }
+
+  tryStartDate() {
+    if (!this.localPlayer || !this.dateBooth || !this.dateManager) return false;
+    const dist = Phaser.Math.Distance.Between(this.localPlayer.x, this.localPlayer.y, this.dateBooth.x, this.dateBooth.y);
+    if (dist < 200) {
+      this.dateManager.startDate(this.buildingType);
+      return true;
+    }
+    return false;
+  }
+
   createFloor() {
     const graphics = this.add.graphics();
     const floorY = 800;
@@ -374,9 +431,13 @@ export class BuildingInterior extends Phaser.Scene {
       this.localPlayer.update(time, delta);
     }
 
-    // Check for exit
-    if (Phaser.Input.Keyboard.JustDown(this.exitKey)) {
-      this.exitBuilding();
+    this.updateDateBoothPrompt();
+
+    // Check for exit (disabled while date UI active)
+    if (Phaser.Input.Keyboard.JustDown(this.exitKey) && !this.dateManager?.isActive()) {
+      if (!this.tryStartDate()) {
+        this.exitBuilding();
+      }
     }
 
     // Update cats
@@ -401,7 +462,10 @@ export class BuildingInterior extends Phaser.Scene {
 
   onMobileAction(action) {
     console.log('BuildingInterior onMobileAction:', action);
-    if (action === 'enter') this.exitBuilding();
+    if (action === 'enter') {
+      if (!this.dateManager?.isActive() && this.tryStartDate()) return;
+      this.exitBuilding();
+    }
     if (action === 'action' && this.localPlayer) {
       if (!this.checkCatInteraction()) this.localPlayer.attemptFistBump();
     }
@@ -505,6 +569,14 @@ export class BuildingInterior extends Phaser.Scene {
       });
     }
     this.networkHandlers = null;
+  }
+
+  getPlayerNameById(id) {
+    if (this.localPlayer && this.localPlayer.playerData.id === id) {
+      return this.localPlayer.playerData.name;
+    }
+    const remote = this.remotePlayers.find(p => p.playerData.id === id);
+    return remote ? remote.playerData.name : null;
   }
 
   addRemotePlayer(playerData) {
