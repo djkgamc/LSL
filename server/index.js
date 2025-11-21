@@ -136,11 +136,12 @@ io.on('connection', async (socket) => {
     // Handle building entry
     // Handle building entry
     socket.on('enterBuilding', (data) => {
+      const { buildingId, buildingType, difficulty } = data;
       const player = gameState.getPlayer(socket.id);
       if (player) {
         // Update player scene to the building type (e.g., 'bar', 'hotel')
         const oldScene = player.scene;
-        const updatedPlayer = gameState.updatePlayer(socket.id, { scene: data.buildingType });
+        const updatedPlayer = gameState.updatePlayer(socket.id, { scene: buildingType });
 
         if (updatedPlayer) {
           // Notify players in old scene
@@ -148,8 +149,9 @@ io.on('connection', async (socket) => {
 
           // Notify client of success
           socket.emit('buildingEntered', {
-            buildingId: data.buildingId,
-            buildingType: data.buildingType,
+            buildingId,
+            buildingType,
+            difficulty,
             scene: updatedPlayer.scene
           });
 

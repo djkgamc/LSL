@@ -18,7 +18,11 @@ export class MusicManager {
       city: { scale: 'minorPentatonic', baseNote: 48, type: 'bass', speed: 2, tempo: 110 }, // C Minor
       bar: { scale: 'phrygian', baseNote: 53, type: 'jazz', speed: 3, tempo: 100 }, // F Phrygian
       hotel: { scale: 'dorian', baseNote: 60, type: 'pad', speed: 4, tempo: 90 }, // C Dorian
-      building: { scale: 'techno', baseNote: 45, type: 'techno', speed: 1, tempo: 135 } // A Minor Techno
+      building: { scale: 'techno', baseNote: 45, type: 'techno', speed: 1, tempo: 135 }, // A Minor Techno
+      building_easy: { scale: 'dorian', baseNote: 52, type: 'pad', speed: 3, tempo: 105 },
+      building_medium: { scale: 'phrygian', baseNote: 55, type: 'jazz', speed: 2, tempo: 118 },
+      building_hard: { scale: 'minorPentatonic', baseNote: 48, type: 'techno', speed: 1, tempo: 140 },
+      building_boss: { scale: 'techno', baseNote: 42, type: 'techno', speed: 1, tempo: 150 }
     };
 
     this.initAudio();
@@ -39,7 +43,7 @@ export class MusicManager {
       this.audioContext.resume();
     }
 
-    const theme = this.themes[sceneName] || this.themes.city;
+    const theme = this.themes[sceneName] || this.themes.building || this.themes.city;
     
     // Don't restart if same theme
     if (this.currentTrack && this.currentTrack.name === sceneName) return;

@@ -150,9 +150,9 @@ export class NetworkClient {
     }
   }
 
-  enterBuilding(buildingId, buildingType) {
+  enterBuilding(buildingId, buildingType, difficulty) {
     if (this.connected) {
-      this.socket.emit('enterBuilding', { buildingId, buildingType });
+      this.socket.emit('enterBuilding', { buildingId, buildingType, difficulty });
     }
   }
 

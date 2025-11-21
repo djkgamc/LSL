@@ -11,7 +11,8 @@ const BUILDING_DIFFICULTY_MAP = {
   beach_bar: 'easy',
   city_bar: 'medium',
   hotel_bar: 'medium',
-  beach_hotel: 'boss',
+  beach_hotel: 'hard',
+  beach_boss: 'boss',
   grand_hotel: 'hard',
   city_hotel: 'hard'
 };
@@ -51,6 +52,7 @@ export class BuildingInterior extends Phaser.Scene {
     this.returnX = data.returnX || 100;
     this.returnY = data.returnY || 900;
     this.dateDifficulty = data.dateDifficulty || BUILDING_DIFFICULTY_MAP[this.buildingId] || 'easy';
+    this.buildingDifficulty = this.dateDifficulty;
     this.bumpedCats = loadBumpedCats();
   }
 
@@ -156,8 +158,8 @@ export class BuildingInterior extends Phaser.Scene {
     // Setup exit
     this.exitKey = this.input.keyboard.addKey('E');
 
-    // Play building music
-    window.musicManager.playSceneMusic('building');
+    // Play building music keyed to difficulty
+    window.musicManager.playSceneMusic(this.getInteriorMusicKey());
 
     // Add Techno Cats
     this.createCats();
@@ -180,6 +182,14 @@ export class BuildingInterior extends Phaser.Scene {
       this.cleanupNetworkEvents();
       // this.cleanupMobileControls();
     }, this);
+  }
+
+  getInteriorMusicKey() {
+    const key = `building_${this.dateDifficulty}`;
+    if (window.musicManager && window.musicManager.themes && window.musicManager.themes[key]) {
+      return key;
+    }
+    return 'building';
   }
 
   // cleanupMobileControls() { ... }
@@ -381,7 +391,8 @@ export class BuildingInterior extends Phaser.Scene {
     this.datePartner.setOrigin(0.5);
     this.datePartner.setDepth(6);
 
-    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, 'Press E to try your luck at a neon date', {
+    const difficultyLabel = this.dateDifficulty.toUpperCase();
+    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, `Press E to start a ${difficultyLabel} neon date`, {
       fontSize: '18px',
       fontFamily: 'Courier New',
       color: '#ffddff',

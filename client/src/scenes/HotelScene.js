@@ -12,11 +12,11 @@ export class HotelScene extends MainScene {
 
   createBuildings() {
     super.createBuildings();
-    
+
     // Grand Hotel
-    this.addDetailedBuilding(960, 700, 400, 350, 'grand_hotel', 'hotel', 'GRAND PLAZA');
-    
+    this.addDetailedBuilding(960, 700, 400, 350, 'grand_hotel', 'hotel', 'GRAND PLAZA', 'hard');
+
     // Hotel Bar
-    this.addDetailedBuilding(400, 800, 160, 160, 'hotel_bar', 'bar', 'LOUNGE');
+    this.addDetailedBuilding(400, 800, 160, 160, 'hotel_bar', 'bar', 'LOUNGE', 'medium');
   }
 }

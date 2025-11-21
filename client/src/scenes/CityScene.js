@@ -74,13 +74,13 @@ export class CityScene extends MainScene {
 
   createBuildings() {
     super.createBuildings();
-    
+
     // Cyber Bar
-    this.addDetailedBuilding(500, 800, 180, 160, 'city_bar', 'bar', 'CYBER BAR');
-    
+    this.addDetailedBuilding(500, 800, 180, 160, 'city_bar', 'bar', 'CYBER BAR', 'medium');
+
     // Neon Hotel
-    this.addDetailedBuilding(1400, 750, 220, 300, 'city_hotel', 'hotel', 'NEON SUITES');
-    
+    this.addDetailedBuilding(1400, 750, 220, 300, 'city_hotel', 'hotel', 'NEON SUITES', 'hard');
+
     // Extra background buildings
     this.addDetailedBuilding(960, 700, 140, 400, 'skyscraper', 'none', 'CORP');
   }
