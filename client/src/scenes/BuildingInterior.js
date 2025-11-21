@@ -9,9 +9,9 @@ const BUILDING_DIFFICULTY_MAP = {
   beach_bar: 'easy',
   city_bar: 'medium',
   hotel_bar: 'medium',
-  beach_hotel: 'hard',
+  beach_hotel: 'boss',
   grand_hotel: 'hard',
-  city_hotel: 'boss'
+  city_hotel: 'hard'
 };
 
 export class BuildingInterior extends Phaser.Scene {
