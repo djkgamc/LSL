@@ -405,7 +405,7 @@ export class BuildingInterior extends Phaser.Scene {
     this.datePartner.setDepth(6);
 
     const difficultyLabel = this.dateDifficulty.toUpperCase();
-    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, `Press E to start a ${difficultyLabel} neon date`, {
+    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, `Press E to try your luck at a ${difficultyLabel} neon date`, {
       fontSize: '18px',
       fontFamily: 'Courier New',
       color: '#ffddff',
