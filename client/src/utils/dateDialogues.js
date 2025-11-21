@@ -18,7 +18,7 @@ const BUILDING_SCRIPT_MAP = {
 
   // Boss Building
   beach_hotel: 'beach_hotel_boss',
-  beach_boss: 'beach_boss_visionary'
+  beach_boss: 'beach_hotel_boss'
 };
 
 export const DATE_SCRIPTS = {
@@ -401,48 +401,6 @@ export const DATE_SCRIPTS = {
   },
 
   // BOSS SCRIPTS
-  beach_boss_visionary: {
-    id: 'beach_boss_visionary',
-    difficulty: 'boss',
-    partnerName: 'Solstice the Visionary',
-    vibe: 'boss',
-    startId: 'opener',
-    nodes: {
-      opener: {
-        prompt: 'Solstice surveys the penthouse horizon. "What makes your partnership legendary?"',
-        options: [
-          { text: 'We turn every wave into a story guests remember.', next: 'crew' },
-          { text: 'We just want the perks.', result: 'fail' }
-        ]
-      },
-      crew: {
-        prompt: '"And your crew?"',
-        options: [
-          { text: 'We empower them to improvise magic for guests.', next: 'crisis' },
-          { text: 'They\'re there to stay quiet.', result: 'fail' }
-        ]
-      },
-      crisis: {
-        prompt: '"Storm cuts the power mid-gala. What happens?"',
-        options: [
-          { text: 'We light the halls with lanterns and violin echoes.', next: 'legacy' },
-          { text: 'Cancel everything and hide.', result: 'fail' },
-          { text: 'Turn it into a glowstick masquerade.', next: 'legacy' }
-        ]
-      },
-      legacy: {
-        prompt: 'Solstice raises an eyebrow. "Final promise?"',
-        options: [
-          { text: 'We leave the penthouse kinder than we found it.', result: 'success' },
-          { text: 'We carve our initials everywhere.', result: 'fail' },
-          { text: 'We publish a guide to radical hospitality.', result: 'success' }
-        ]
-      }
-    },
-    successMessage: 'Solstice hands you a gleaming keycard. "You build legends." Heartlight dances across the waves.',
-    failureMessage: 'Solstice turns back to the skyline. "Legends require vision. Return when you\'re ready."'
-  },
-
   beach_hotel_boss: {
     id: 'beach_hotel_boss',
     difficulty: 'boss',
