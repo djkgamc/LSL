@@ -15,9 +15,10 @@ const BUILDING_DIFFICULTY_MAP = {
   grand_hotel: 'hard',
   city_hotel: 'hard'
 };
-// Win path math: goal is Style Tier 4 (2000 pts, since tiers climb every 500).
-// One-time clears across the map award 2x easy (2 * 100 = 200), 3x medium (3 * 200 = 600),
-// 2x hard (2 * 350 = 700), and 1x boss (1 * 600 = 600) for 2100 total—enough to win without repeats.
+// Win path math: goal is Style Tier 4 (2000 pts, since tiers climb every 500 and Style Tier = floor(score / 500)).
+// Incremental unlocks without repeats: 2x easy (2 * 250 = 500) lifts you to Tier 1 so you can start mediums;
+// 3x medium adds 600 (total 1100) for Tier 2 access to hards; 2x hard adds 700 (total 1800) to reach Tier 3 for the boss;
+// the boss grants 600 more (total 2400), clearing Tier 4 with room to spare—every gate opens in sequence on first clears.
 
 function loadBumpedCats() {
   try {

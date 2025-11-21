@@ -8,7 +8,7 @@ const STYLE_TIER_REQUIREMENTS = {
 };
 
 const POINTS_BY_DIFFICULTY = {
-  easy: 100,
+  easy: 250,
   medium: 200,
   hard: 350,
   boss: 600
