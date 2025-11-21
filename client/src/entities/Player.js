@@ -6,7 +6,7 @@ const SUIT_COLORS = [
   { body: 0xd5f0ff, shirt: 0x00d1ff },
   { body: 0xc9f7e4, shirt: 0x00d98b },
   { body: 0xf9e0ff, shirt: 0xc748ff },
-  { body: 0xfff1c7, shirt: 0xff7f50 }
+  { body: 0xffd32b, shirt: 0xffa300 }
 ];
 
 export class Player extends Phaser.GameObjects.Container {
@@ -20,7 +20,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.styleTier = typeof playerData.styleTier === 'number'
       ? playerData.styleTier
       : getStyleTierFromScore(playerData.score);
-    this.accessories = { hat: null, shades: null, trail: null };
+    this.accessories = { hat: null, shades: null };
 
     // Create composite sprite
     this.createCharacterVisuals(scene);
@@ -126,16 +126,13 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     if (this.styleTier >= 2) {
-      this.accessories.hat = this.createHat(24, 8, 0x3b0f53);
+      this.accessories.hat = this.createHat(34, 12, 0x3b0f53, 0xffe26c);
     }
 
     if (this.styleTier >= 3) {
       this.accessories.shades = this.createShades(16, 6, 0x000000);
     }
 
-    if (this.styleTier >= 4) {
-      this.accessories.trail = this.createTrail();
-    }
   }
 
   removeAccessories() {
@@ -144,15 +141,28 @@ export class Player extends Phaser.GameObjects.Container {
         accessory.destroy();
       }
     });
-    this.accessories = { hat: null, shades: null, trail: null };
+    this.accessories = { hat: null, shades: null };
   }
 
-  createHat(width, height, color) {
+  createHat(width, height, color, bandColor) {
     const brim = this.scene.add.rectangle(0, -28, width + 6, 4, color);
     const top = this.scene.add.rectangle(0, -32 - height / 2, width, height, color);
+    if (bandColor) {
+      const band = this.scene.add.rectangle(0, -32 - height / 2, width, 4, bandColor);
+      this.add(band);
+      top.band = band;
+    }
     this.add(brim);
     this.add(top);
-    return { brim, top, destroy: () => { brim.destroy(); top.destroy(); } };
+    return {
+      brim,
+      top,
+      destroy: () => {
+        if (top.band) top.band.destroy();
+        brim.destroy();
+        top.destroy();
+      }
+    };
   }
 
   createShades(width, height, color) {
@@ -160,14 +170,6 @@ export class Player extends Phaser.GameObjects.Container {
     shades.setStrokeStyle(2, 0x555555, 1);
     this.add(shades);
     return shades;
-  }
-
-  createTrail() {
-    const trail = this.scene.add.rectangle(-12, 12, 10, 28, 0xff00ff, 0.35);
-    trail.setStrokeStyle(2, 0xffff00, 0.5);
-    this.add(trail);
-    this.sendToBack(trail);
-    return trail;
   }
 
   update(time, delta) {
