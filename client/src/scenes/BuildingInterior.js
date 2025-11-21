@@ -3,6 +3,42 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { PALETTE, createGradientTexture } from '../utils/Visuals.js';
 import { DateManager } from '../utils/DateManager.js';
 
+const BUMPED_CATS_KEY = 'lsl_bumped_cats';
+
+const BUILDING_DIFFICULTY_MAP = {
+  main_bar: 'easy',
+  bar_hotel: 'medium',
+  beach_bar: 'easy',
+  city_bar: 'medium',
+  hotel_bar: 'medium',
+  beach_hotel: 'boss',
+  grand_hotel: 'hard',
+  city_hotel: 'hard'
+};
+// Win path math: goal is Style Tier 4 (2000 pts, since tiers climb every 500 and Style Tier = floor(score / 500)).
+// Incremental unlocks without repeats: 2x easy (2 * 250 = 500) lifts you to Tier 1 so you can start mediums;
+// 3x medium adds 600 (total 1100) for Tier 2 access to hards; 2x hard adds 700 (total 1800) to reach Tier 3 for the boss;
+// the boss grants 600 more (total 2400), clearing Tier 4 with room to spare—every gate opens in sequence on first clears.
+
+function loadBumpedCats() {
+  try {
+    const raw = localStorage.getItem(BUMPED_CATS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch (err) {
+    console.warn('Unable to load bumped cats', err);
+    return new Set();
+  }
+}
+
+function persistBumpedCats(set) {
+  try {
+    localStorage.setItem(BUMPED_CATS_KEY, JSON.stringify(Array.from(set)));
+  } catch (err) {
+    console.warn('Unable to persist bumped cats', err);
+  }
+}
+
 export class BuildingInterior extends Phaser.Scene {
   constructor() {
     super({ key: 'BuildingInterior' });
@@ -14,6 +50,8 @@ export class BuildingInterior extends Phaser.Scene {
     this.returnScene = data.returnScene || 'BeachScene';
     this.returnX = data.returnX || 100;
     this.returnY = data.returnY || 900;
+    this.dateDifficulty = data.dateDifficulty || BUILDING_DIFFICULTY_MAP[this.buildingId] || 'easy';
+    this.bumpedCats = loadBumpedCats();
   }
 
   create() {
@@ -270,6 +308,28 @@ export class BuildingInterior extends Phaser.Scene {
   }
 
   triggerCatFistBump(cat) {
+    if (this.bumpedCats?.has(cat.id)) {
+      const text = this.add.text(cat.x, cat.y - 50, 'They already vibe with you.', {
+        fontSize: '18px',
+        fontFamily: 'Courier New',
+        color: '#ccccff',
+        stroke: '#000000',
+        strokeThickness: 3
+      });
+      text.setOrigin(0.5);
+      this.tweens.add({
+        targets: text,
+        y: cat.y - 100,
+        alpha: 0,
+        duration: 900,
+        onComplete: () => text.destroy()
+      });
+      return;
+    }
+
+    this.bumpedCats.add(cat.id);
+    persistBumpedCats(this.bumpedCats);
+
     // Visual feedback
     const text = this.add.text(cat.x, cat.y - 50, 'FIST BUMP!', {
       fontSize: '20px',
@@ -321,7 +381,7 @@ export class BuildingInterior extends Phaser.Scene {
     this.datePartner.setOrigin(0.5);
     this.datePartner.setDepth(6);
 
-    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, 'Press E to start a neon date', {
+    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, 'Press E to try your luck at a neon date', {
       fontSize: '18px',
       fontFamily: 'Courier New',
       color: '#ffddff',
@@ -348,7 +408,7 @@ export class BuildingInterior extends Phaser.Scene {
     if (!this.localPlayer || !this.dateBooth || !this.dateManager) return false;
     const dist = Phaser.Math.Distance.Between(this.localPlayer.x, this.localPlayer.y, this.dateBooth.x, this.dateBooth.y);
     if (dist < 200) {
-      this.dateManager.startDate(this.buildingType);
+      this.dateManager.startDate(this.buildingType, this.dateDifficulty);
       return true;
     }
     return false;
