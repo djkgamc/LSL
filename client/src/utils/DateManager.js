@@ -1,5 +1,12 @@
 import { getRandomDateScript } from './dateDialogues.js';
 
+const STYLE_TIER_REQUIREMENTS = {
+  easy: 0,
+  medium: 1,
+  hard: 2,
+  boss: 3
+};
+
 export class DateManager {
   constructor(scene) {
     this.scene = scene;
@@ -53,10 +60,25 @@ export class DateManager {
     return this.active;
   }
 
-  startDate(buildingType = 'bar') {
+  startDate(buildingType = 'bar', difficulty = 'easy') {
     if (this.active) return;
 
-    this.script = getRandomDateScript(buildingType);
+    const requiredTier = STYLE_TIER_REQUIREMENTS[difficulty] ?? STYLE_TIER_REQUIREMENTS.easy;
+    const playerTier = this.scene?.localPlayer?.styleTier ?? 0;
+
+    if (playerTier < requiredTier) {
+      this.active = true;
+      this.scene.inputLocked = true;
+      this.overlay.classList.add('visible');
+      this.resultEl.classList.add('hidden');
+      this.heartsEl.classList.remove('success', 'fail', 'rejected');
+      this.toastEl.classList.add('hidden');
+      this.script = null;
+      this.showResult('rejected', `Need style tier ${requiredTier}+ to attempt a ${difficulty.toUpperCase()} date.`);
+      return;
+    }
+
+    this.script = getRandomDateScript(buildingType, difficulty);
     this.currentNodeId = this.script?.startId;
     if (!this.script || !this.currentNodeId) return;
 
@@ -64,7 +86,7 @@ export class DateManager {
     this.scene.inputLocked = true;
     this.overlay.classList.add('visible');
     this.resultEl.classList.add('hidden');
-    this.heartsEl.classList.remove('success', 'fail');
+    this.heartsEl.classList.remove('success', 'fail', 'rejected');
     this.toastEl.classList.add('hidden');
     this.renderNode();
     this.attachNetworkHook();
@@ -109,15 +131,21 @@ export class DateManager {
 
   showResult(outcome, message) {
     const isSuccess = outcome === 'success';
-    const points = isSuccess ? 100 : 10;
+    const isRejected = outcome === 'rejected';
+    const points = isSuccess ? 100 : isRejected ? 0 : 10;
+    const partnerLabel = isSuccess
+      ? 'Date Locked In!'
+      : isRejected
+        ? 'Date Rejected (Style Tier Too Low)'
+        : 'Date Fizzled (But Points!)';
 
     this.optionsEl.innerHTML = '';
     this.promptEl.textContent = '';
-    this.partnerEl.textContent = isSuccess ? 'Date Locked In!' : 'Date Fizzled (But Points!)';
+    this.partnerEl.textContent = partnerLabel;
     this.resultEl.textContent = `${message} (${points} pts)`;
     this.resultEl.classList.remove('hidden');
-    this.heartsEl.classList.remove('success', 'fail');
-    this.heartsEl.classList.add(isSuccess ? 'success' : 'fail');
+    this.heartsEl.classList.remove('success', 'fail', 'rejected');
+    this.heartsEl.classList.add(isSuccess ? 'success' : isRejected ? 'rejected' : 'fail');
 
     if (window.networkClient && window.networkClient.sendDateResult) {
       window.networkClient.sendDateResult({ outcome, points });

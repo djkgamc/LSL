@@ -3,6 +3,17 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { PALETTE, createGradientTexture } from '../utils/Visuals.js';
 import { DateManager } from '../utils/DateManager.js';
 
+const BUILDING_DIFFICULTY_MAP = {
+  main_bar: 'easy',
+  bar_hotel: 'medium',
+  beach_bar: 'easy',
+  city_bar: 'medium',
+  hotel_bar: 'medium',
+  beach_hotel: 'hard',
+  grand_hotel: 'hard',
+  city_hotel: 'boss'
+};
+
 export class BuildingInterior extends Phaser.Scene {
   constructor() {
     super({ key: 'BuildingInterior' });
@@ -14,6 +25,7 @@ export class BuildingInterior extends Phaser.Scene {
     this.returnScene = data.returnScene || 'BeachScene';
     this.returnX = data.returnX || 100;
     this.returnY = data.returnY || 900;
+    this.dateDifficulty = data.dateDifficulty || BUILDING_DIFFICULTY_MAP[this.buildingId] || 'easy';
   }
 
   create() {
@@ -321,7 +333,8 @@ export class BuildingInterior extends Phaser.Scene {
     this.datePartner.setOrigin(0.5);
     this.datePartner.setDepth(6);
 
-    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, 'Press E to start a neon date', {
+    const difficultyLabel = this.dateDifficulty ? this.dateDifficulty.toUpperCase() : 'EASY';
+    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, `Press E to start a ${difficultyLabel} neon date`, {
       fontSize: '18px',
       fontFamily: 'Courier New',
       color: '#ffddff',
@@ -348,7 +361,7 @@ export class BuildingInterior extends Phaser.Scene {
     if (!this.localPlayer || !this.dateBooth || !this.dateManager) return false;
     const dist = Phaser.Math.Distance.Between(this.localPlayer.x, this.localPlayer.y, this.dateBooth.x, this.dateBooth.y);
     if (dist < 200) {
-      this.dateManager.startDate(this.buildingType);
+      this.dateManager.startDate(this.buildingType, this.dateDifficulty);
       return true;
     }
     return false;
