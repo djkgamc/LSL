@@ -3,18 +3,22 @@ const BUILDING_SCRIPT_MAP = {
   // Easy Buildings
   main_bar: 'main_bar_poet',
   beach_bar: 'beach_bar_surfer',
-  
+  skyscraper: 'skyscraper_strategist',
+
   // Medium Buildings
   bar_hotel: 'bar_hotel_dj',
   city_bar: 'city_bar_hacker',
   hotel_bar: 'hotel_bar_sommelier',
-  
+  bar_lounge: 'bar_lounge_curator',
+  hotel_lounge: 'hotel_lounge_choreographer',
+
   // Hard Buildings
   grand_hotel: 'grand_hotel_architect',
   city_hotel: 'city_hotel_stargazer',
-  
+
   // Boss Building
-  beach_hotel: 'beach_hotel_boss'
+  beach_hotel: 'beach_hotel_boss',
+  beach_boss: 'beach_boss_visionary'
 };
 
 export const DATE_SCRIPTS = {
@@ -83,6 +87,40 @@ export const DATE_SCRIPTS = {
     },
     successMessage: 'Wave high-fives you. "You\'re totally rad!" Hearts wash in like the tide.',
     failureMessage: 'Wave shrugs. "Maybe next wave, dude."'
+  },
+
+  skyscraper_strategist: {
+    id: 'skyscraper_strategist',
+    difficulty: 'easy',
+    partnerName: 'Axis the Strategist',
+    vibe: 'bar',
+    startId: 'opener',
+    nodes: {
+      opener: {
+        prompt: 'Axis adjusts their cufflinks atop the skyscraper lounge. "What\'s your elevator pitch?"',
+        options: [
+          { text: 'A skyline dinner that ends with a rooftop dance.', next: 'vision' },
+          { text: 'I just wing it and hope.', result: 'fail' }
+        ]
+      },
+      vision: {
+        prompt: '"Not bad. How do you keep things grounded?"',
+        options: [
+          { text: 'By listening before we leap.', next: 'balance' },
+          { text: 'I don\'t—thrill is everything.', result: 'fail' }
+        ]
+      },
+      balance: {
+        prompt: 'Axis leans closer. "Final move: what\'s our exit plan?"',
+        options: [
+          { text: 'A quiet ride down to late-night street noodles.', result: 'success' },
+          { text: 'We jump and hope parachutes appear.', result: 'fail' },
+          { text: 'We stay until sunrise and sign the skyline together.', result: 'success' }
+        ]
+      }
+    },
+    successMessage: 'Axis nods approvingly. "You planned the night perfectly." Neon hearts trace the horizon.',
+    failureMessage: 'Axis smirks. "Maybe draft a better plan." The elevator doors close gently.'
   },
 
   // MEDIUM SCRIPTS
@@ -205,6 +243,74 @@ export const DATE_SCRIPTS = {
     failureMessage: 'Vintage sets down the glass. "Not quite vintage yet."'
   },
 
+  bar_lounge_curator: {
+    id: 'bar_lounge_curator',
+    difficulty: 'medium',
+    partnerName: 'Muse the Curator',
+    vibe: 'lounge',
+    startId: 'opener',
+    nodes: {
+      opener: {
+        prompt: 'Muse arranges vinyls on a velvet shelf. "What mood are you curating tonight?"',
+        options: [
+          { text: 'Smoky jazz with a side of secrets.', next: 'collection' },
+          { text: 'Chaotic pop—let\'s break the vibe.', result: 'fail' }
+        ]
+      },
+      collection: {
+        prompt: '"Intriguing. What\'s the centerpiece piece?"',
+        options: [
+          { text: 'A rare pressing that only plays after midnight.', next: 'closing' },
+          { text: 'Whatever was cheapest.', result: 'fail' }
+        ]
+      },
+      closing: {
+        prompt: 'Muse leans in. "And how do we close the night?"',
+        options: [
+          { text: 'A silent listen on floor pillows, letting the last note linger.', result: 'success' },
+          { text: 'We just leave the record spinning unattended.', result: 'fail' },
+          { text: 'Invite the room to hum along as lights dim.', result: 'success' }
+        ]
+      }
+    },
+    successMessage: 'Muse smiles. "You get the art of ambience." Soft hearts ripple through the lounge light.',
+    failureMessage: 'Muse shrugs and swaps the record. "Maybe browse the collection and try again."'
+  },
+
+  hotel_lounge_choreographer: {
+    id: 'hotel_lounge_choreographer',
+    difficulty: 'medium',
+    partnerName: 'Cadence the Choreographer',
+    vibe: 'lounge',
+    startId: 'opener',
+    nodes: {
+      opener: {
+        prompt: 'Cadence sketches dance steps on a napkin. "What rhythm moves you?"',
+        options: [
+          { text: 'Slow waltz that turns into freestyle.', next: 'stage' },
+          { text: 'No rhythm—just chaos.', result: 'fail' }
+        ]
+      },
+      stage: {
+        prompt: '"Where do we perform it?"',
+        options: [
+          { text: 'By the hotel pool at midnight.', next: 'finale' },
+          { text: 'In the elevator between floors.', result: 'fail' }
+        ]
+      },
+      finale: {
+        prompt: 'Cadence taps the table. "And the finale?"',
+        options: [
+          { text: 'A dip under lanterns while the band holds the last note.', result: 'success' },
+          { text: 'We run offstage before anyone claps.', result: 'fail' },
+          { text: 'Audience joins for a glowing conga through the lobby.', result: 'success' }
+        ]
+      }
+    },
+    successMessage: 'Cadence spins you once. "You know how to stick the landing." Hearts spiral like spotlights.',
+    failureMessage: 'Cadence folds the napkin. "Practice the beat and come back."'
+  },
+
   // HARD SCRIPTS
   grand_hotel_architect: {
     id: 'grand_hotel_architect',
@@ -294,7 +400,49 @@ export const DATE_SCRIPTS = {
     failureMessage: 'Clouds cover the view. Lumen smiles and hands you a weather app recommendation.'
   },
 
-  // BOSS SCRIPT
+  // BOSS SCRIPTS
+  beach_boss_visionary: {
+    id: 'beach_boss_visionary',
+    difficulty: 'boss',
+    partnerName: 'Solstice the Visionary',
+    vibe: 'boss',
+    startId: 'opener',
+    nodes: {
+      opener: {
+        prompt: 'Solstice surveys the penthouse horizon. "What makes your partnership legendary?"',
+        options: [
+          { text: 'We turn every wave into a story guests remember.', next: 'crew' },
+          { text: 'We just want the perks.', result: 'fail' }
+        ]
+      },
+      crew: {
+        prompt: '"And your crew?"',
+        options: [
+          { text: 'We empower them to improvise magic for guests.', next: 'crisis' },
+          { text: 'They\'re there to stay quiet.', result: 'fail' }
+        ]
+      },
+      crisis: {
+        prompt: '"Storm cuts the power mid-gala. What happens?"',
+        options: [
+          { text: 'We light the halls with lanterns and violin echoes.', next: 'legacy' },
+          { text: 'Cancel everything and hide.', result: 'fail' },
+          { text: 'Turn it into a glowstick masquerade.', next: 'legacy' }
+        ]
+      },
+      legacy: {
+        prompt: 'Solstice raises an eyebrow. "Final promise?"',
+        options: [
+          { text: 'We leave the penthouse kinder than we found it.', result: 'success' },
+          { text: 'We carve our initials everywhere.', result: 'fail' },
+          { text: 'We publish a guide to radical hospitality.', result: 'success' }
+        ]
+      }
+    },
+    successMessage: 'Solstice hands you a gleaming keycard. "You build legends." Heartlight dances across the waves.',
+    failureMessage: 'Solstice turns back to the skyline. "Legends require vision. Return when you\'re ready."'
+  },
+
   beach_hotel_boss: {
     id: 'beach_hotel_boss',
     difficulty: 'boss',
