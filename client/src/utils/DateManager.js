@@ -1,4 +1,4 @@
-import { getRandomDateScript } from './dateDialogues.js';
+import { getDateScriptForBuilding } from './dateDialogues.js';
 
 const STYLE_TIER_REQUIREMENTS = {
   easy: 0,
@@ -99,13 +99,13 @@ export class DateManager {
     persistSet(DATE_COMPLETION_KEY, this.completedDates);
   }
 
-  startDate(buildingType = 'bar', difficulty = 'easy') {
+  startDate(buildingId, difficulty = 'easy') {
     if (this.active) return;
 
     const requiredTier = STYLE_TIER_REQUIREMENTS[difficulty] ?? STYLE_TIER_REQUIREMENTS.easy;
     const playerTier = this.scene?.localPlayer?.styleTier ?? 0;
 
-    this.script = getRandomDateScript(buildingType, difficulty);
+    this.script = getDateScriptForBuilding(buildingId);
     this.currentNodeId = this.script?.startId;
 
     if (this.hasCompletedDate(this.script?.id)) {

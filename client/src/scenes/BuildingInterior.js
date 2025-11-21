@@ -408,7 +408,7 @@ export class BuildingInterior extends Phaser.Scene {
     if (!this.localPlayer || !this.dateBooth || !this.dateManager) return false;
     const dist = Phaser.Math.Distance.Between(this.localPlayer.x, this.localPlayer.y, this.dateBooth.x, this.dateBooth.y);
     if (dist < 200) {
-      this.dateManager.startDate(this.buildingType, this.dateDifficulty);
+      this.dateManager.startDate(this.buildingId, this.dateDifficulty);
       return true;
     }
     return false;
