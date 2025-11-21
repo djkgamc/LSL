@@ -3,11 +3,11 @@ const BUILDING_SCRIPT_MAP = {
   // Easy Buildings
   main_bar: 'main_bar_poet',
   beach_bar: 'beach_bar_surfer',
+  city_bar: 'city_bar_busker',
   skyscraper: 'skyscraper_strategist',
 
   // Medium Buildings
   bar_hotel: 'bar_hotel_dj',
-  city_bar: 'city_bar_hacker',
   hotel_bar: 'hotel_bar_sommelier',
   bar_lounge: 'bar_lounge_curator',
   hotel_lounge: 'hotel_lounge_choreographer',
@@ -15,9 +15,9 @@ const BUILDING_SCRIPT_MAP = {
   // Hard Buildings
   grand_hotel: 'grand_hotel_architect',
   city_hotel: 'city_hotel_stargazer',
+  beach_hotel: 'beach_hotel_navigator',
 
   // Boss Building
-  beach_hotel: 'beach_hotel_boss',
   beach_boss: 'beach_hotel_boss'
 };
 
@@ -87,6 +87,42 @@ export const DATE_SCRIPTS = {
     },
     successMessage: 'Wave high-fives you. "You\'re totally rad!" Hearts wash in like the tide.',
     failureMessage: 'Wave shrugs. "Maybe next wave, dude."'
+  },
+
+  city_bar_busker: {
+    id: 'city_bar_busker',
+    difficulty: 'easy',
+    partnerName: 'Chime the Busker',
+    vibe: 'bar',
+    startId: 'opener',
+    nodes: {
+      opener: {
+        prompt: 'Chime tunes a neon-lit guitar. "Request a song or share a story?"',
+        options: [
+          { text: 'Request: something that sounds like city lights.', next: 'audience' },
+          { text: 'Story: the time I danced in the rain on 5th.', next: 'audience' },
+          { text: 'Can you play silence?', result: 'fail' }
+        ]
+      },
+      audience: {
+        prompt: '"Nice. Do we play for the crowd or just us two?"',
+        options: [
+          { text: 'Start with the crowd, end with a quiet duet.', next: 'encore' },
+          { text: 'Just us—the city hum is our backing track.', next: 'encore' },
+          { text: 'Crowd only. No solos.', result: 'fail' }
+        ]
+      },
+      encore: {
+        prompt: 'Chime leans closer. "What\'s our encore move?"',
+        options: [
+          { text: 'We loop the chorus until the streetlights blink.', result: 'success' },
+          { text: 'We bow, drop the hat, and vanish into the night.', result: 'success' },
+          { text: 'We argue about chords on stage.', result: 'fail' }
+        ]
+      }
+    },
+    successMessage: 'Chime laughs, riffing a melody that echoes down the avenue. Coins turn to hearts in the guitar case.',
+    failureMessage: 'Chime shrugs, packing up the guitar. "Maybe catch me after another set."'
   },
 
   skyscraper_strategist: {
@@ -354,6 +390,42 @@ export const DATE_SCRIPTS = {
     },
     successMessage: 'Aria snaps her notebook shut. "Blueprint approved." Golden hearts shimmer down the hallway.',
     failureMessage: 'She chuckles, folds the page, and suggests a practice mockup in cardboard.'
+  },
+
+  beach_hotel_navigator: {
+    id: 'beach_hotel_navigator',
+    difficulty: 'hard',
+    partnerName: 'Maris the Navigator',
+    vibe: 'hotel',
+    startId: 'opener',
+    nodes: {
+      opener: {
+        prompt: 'Maris spreads a nautical chart over the lobby desk. "What course do we plot from this shore?"',
+        options: [
+          { text: 'A moonlit sail past neon buoys.', next: 'storm' },
+          { text: 'A secret lagoon only locals know.', next: 'storm' },
+          { text: 'Straight line, no detours.', result: 'fail' }
+        ]
+      },
+      storm: {
+        prompt: '"Storm rolls in. What\'s the plan?"',
+        options: [
+          { text: 'Anchor near the pier and throw a lobby dance party.', next: 'treasure' },
+          { text: 'Navigate by lighthouse playlists and coffee.', next: 'treasure' },
+          { text: 'Panic and yell into the wind.', result: 'fail' }
+        ]
+      },
+      treasure: {
+        prompt: '"Final waypoint: what treasure do we return with?"',
+        options: [
+          { text: 'A journal of constellations we found together.', result: 'success' },
+          { text: 'A map of future voyages framed above the reception.', result: 'success' },
+          { text: 'Wet socks.', result: 'fail' }
+        ]
+      }
+    },
+    successMessage: 'Maris stamps the chart with a glowing compass rose. "Course set." The lobby floor shimmers like tide lines.',
+    failureMessage: 'Maris folds the map and offers a courtesy umbrella. "Try again when the skies clear."'
   },
 
   city_hotel_stargazer: {
