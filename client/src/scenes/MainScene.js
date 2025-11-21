@@ -35,6 +35,14 @@ const DIFFICULTY_STYLES = {
   }
 };
 
+const TYPE_DIFFICULTY = {
+  bar: 'easy',
+  cafe: 'medium',
+  lounge: 'medium',
+  hotel: 'hard',
+  boss: 'boss'
+};
+
 export class MainScene extends Phaser.Scene {
   constructor(key, sceneName, backgroundColor) {
     super({ key });
@@ -299,9 +307,10 @@ export class MainScene extends Phaser.Scene {
     this.buildings = [];
   }
 
-  addDetailedBuilding(x, y, width, height, buildingId, buildingType, name, difficulty = 'easy') {
-    const palette = DIFFICULTY_STYLES[difficulty] || DIFFICULTY_STYLES.easy;
-    const building = { x, y, width, height, buildingId, buildingType, name, difficulty };
+  addDetailedBuilding(x, y, width, height, buildingId, buildingType, name, difficulty = null) {
+    const resolvedDifficulty = difficulty || TYPE_DIFFICULTY[buildingType] || 'easy';
+    const palette = DIFFICULTY_STYLES[resolvedDifficulty] || DIFFICULTY_STYLES.easy;
+    const building = { x, y, width, height, buildingId, buildingType, name, difficulty: resolvedDifficulty };
 
     // Main body (dark, tinted per difficulty)
     const body = this.add.rectangle(x, y, width, height, palette.bodyColor || PALETTE.buildingBody);
@@ -362,8 +371,8 @@ export class MainScene extends Phaser.Scene {
       fontFamily: 'Courier New',
       color: signColor,
       stroke: signStrokeColor,
-      strokeThickness: 4,
-      shadow: { blur: 10, color: signStrokeColor, fill: true }
+      strokeThickness: 3,
+      shadow: { blur: 2, color: signStrokeColor, fill: true }
     });
     signText.setOrigin(0.5);
     signText.setDepth(-8);

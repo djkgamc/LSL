@@ -10,7 +10,8 @@ export class MusicManager {
       minorPentatonic: [0, 3, 5, 7, 10],
       dorian: [0, 2, 3, 5, 7, 9, 10],
       phrygian: [0, 1, 3, 5, 7, 8, 10],
-      techno: [0, 3, 5, 7, 10] // Minor Pentatonic
+      techno: [0, 3, 5, 7, 10], // Minor Pentatonic
+      chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     };
     
     this.themes = {
@@ -18,11 +19,15 @@ export class MusicManager {
       city: { scale: 'minorPentatonic', baseNote: 48, type: 'bass', speed: 2, tempo: 110 }, // C Minor
       bar: { scale: 'phrygian', baseNote: 53, type: 'jazz', speed: 3, tempo: 100 }, // F Phrygian
       hotel: { scale: 'dorian', baseNote: 60, type: 'pad', speed: 4, tempo: 90 }, // C Dorian
-      building: { scale: 'techno', baseNote: 45, type: 'techno', speed: 1, tempo: 135 }, // A Minor Techno
-      building_easy: { scale: 'dorian', baseNote: 52, type: 'pad', speed: 3, tempo: 105 },
-      building_medium: { scale: 'phrygian', baseNote: 55, type: 'jazz', speed: 2, tempo: 118 },
-      building_hard: { scale: 'minorPentatonic', baseNote: 48, type: 'techno', speed: 1, tempo: 140 },
-      building_boss: { scale: 'techno', baseNote: 42, type: 'techno', speed: 1, tempo: 150 }
+      building: { scale: 'techno', baseNote: 45, type: 'techno', speed: 1, tempo: 135, mode: 'bossPulse' },
+      building_bar: { scale: 'minorPentatonic', baseNote: 50, type: 'groove', speed: 2, tempo: 112, mode: 'barGroove' },
+      building_cafe: { scale: 'dorian', baseNote: 57, type: 'pad', speed: 4, tempo: 98, mode: 'loungeDream' },
+      building_lounge: { scale: 'dorian', baseNote: 54, type: 'jazz', speed: 3, tempo: 104, mode: 'loungeDream' },
+      building_hotel: { scale: 'phrygian', baseNote: 58, type: 'pad', speed: 3, tempo: 124, mode: 'suitePulse' },
+      building_easy: { scale: 'dorian', baseNote: 52, type: 'pad', speed: 3, tempo: 105, mode: 'barGroove' },
+      building_medium: { scale: 'phrygian', baseNote: 55, type: 'jazz', speed: 2, tempo: 118, mode: 'loungeDream' },
+      building_hard: { scale: 'minorPentatonic', baseNote: 48, type: 'techno', speed: 1, tempo: 140, mode: 'suitePulse' },
+      building_boss: { scale: 'chromatic', baseNote: 42, type: 'techno', speed: 1, tempo: 146, mode: 'bossPulse' }
     };
 
     this.initAudio();
@@ -82,64 +87,105 @@ export class MusicManager {
     const stepTime = (60 / tempo) * 1000 / 4; // 16th notes
     let step = 0;
 
-    // Create initial drone/pad (except for techno)
-    if (theme.type !== 'techno') {
-        this.playChord(theme.baseNote, scale, 'pad');
+    const mode = theme.mode || theme.type;
+
+    // Create initial drone/pad (except for heavy techno)
+    if (mode !== 'bossPulse' && theme.type !== 'techno') {
+      this.playChord(theme.baseNote, scale, 'pad');
     }
 
     this.currentTrack.timer = setInterval(() => {
       step++;
-      
-      if (theme.type === 'techno') {
-          // 4/4 Kick
-          if (step % 4 === 0) {
-              this.playKick();
-          }
-          
-          // Hi-hat
-          if ((step + 2) % 4 === 0) {
-              this.playHiHat();
-          }
-          
-          // Bass Arp
+
+      if (mode === 'barGroove') {
+        if (step % 4 === 0) this.playKick(1);
+        if (step % 8 === 0) this.playClap(0.8);
+        if (step % 2 === 0) this.playHiHat(0.35);
+
+        if (step % 4 === 0) {
+          const bassNote = theme.baseNote + scale[(step / 4) % scale.length] - 12;
+          this.playNote(bassNote, 0.12, 'bass');
+        }
+
+        if (step % 16 === 0) {
+          const chordOffset = [0, 5, 7, 3][(step / 16) % 4];
+          this.playChord(theme.baseNote + chordOffset, scale, 'pad');
+        }
+
+        if (step % 12 === 0 && Math.random() > 0.4) {
+          const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
+          this.playNote(melodyNote, 0.25, 'lead');
+        }
+      } else if (mode === 'loungeDream') {
+        if (step % 8 === 0) this.playKick(0.45);
+        if (step % 4 === 2) this.playHiHat(0.35);
+
+        if (step % 16 === 0) {
+          this.playChord(theme.baseNote + (Math.random() > 0.5 ? 2 : 0), scale, 'pad');
+        }
+
+        if (step % (theme.speed * 6) === 0) {
           const noteIndex = Math.floor(Math.random() * scale.length);
-          const note = theme.baseNote + scale[step % scale.length] - 12;
-          this.playNote(note, 0.1, 'bass');
-          
-          // Lead (sparse)
-          if (step % 16 === 0 && Math.random() > 0.5) {
-              const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
-              this.playNote(melodyNote, 0.2, 'lead');
-          }
+          const note = theme.baseNote + scale[noteIndex] + 12;
+          this.playNote(note, 0.45, 'lead');
+        }
+      } else if (mode === 'suitePulse') {
+        if (step % 4 === 0) this.playKick(0.9);
+        if (step % 8 === 0) this.playClap(0.6);
+        if (step % 2 === 0) this.playHiHat(0.45);
+
+        if (step % 4 === 0) {
+          const bassNote = theme.baseNote + scale[(step / 2) % scale.length] - 12;
+          this.playNote(bassNote, 0.14, 'bass');
+        }
+
+        if (step % 24 === 0) {
+          const chordOffset = [0, 7, 5][(step / 24) % 3];
+          this.playChord(theme.baseNote + chordOffset, scale, 'pad');
+        }
+
+        if (step % 8 === 0 && Math.random() > 0.6) {
+          const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
+          this.playNote(melodyNote, 0.2, 'lead');
+        }
+      } else if (mode === 'bossPulse' || theme.type === 'techno') {
+        if (step % 4 === 0) this.playKick(1);
+        if (step % 4 === 2) this.playHiHat(0.6);
+        if (step % 8 === 0) this.playClap(0.85);
+
+        const note = theme.baseNote + scale[step % scale.length] - 12;
+        this.playNote(note, 0.1, 'bass');
+
+        if (step % 8 === 0) {
+          const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
+          this.playNote(melodyNote, 0.18, 'lead');
+        }
       } else {
-          // Original logic for ambient/jazz
-          // Play melody note occasionally
-          if (step % (theme.speed * 4) === 0) {
-            const noteIndex = Math.floor(Math.random() * scale.length);
-            const octave = Math.random() > 0.7 ? 1 : 0;
-            const note = theme.baseNote + scale[noteIndex] + (octave * 12);
-            this.playNote(note, 0.5, 'lead');
-          }
-          
-          // Change chord every 64 steps (4 bars)
-          if (step % 64 === 0) {
-            const progressions = [0, 7, 5, 0]; 
-            const rootOffset = progressions[(step / 64) % 4];
-            this.playChord(theme.baseNote + rootOffset, scale, 'pad');
-          }
+        if (step % (theme.speed * 4) === 0) {
+          const noteIndex = Math.floor(Math.random() * scale.length);
+          const octave = Math.random() > 0.7 ? 1 : 0;
+          const note = theme.baseNote + scale[noteIndex] + (octave * 12);
+          this.playNote(note, 0.5, 'lead');
+        }
+
+        if (step % 64 === 0) {
+          const progressions = [0, 7, 5, 0];
+          const rootOffset = progressions[(step / 64) % 4];
+          this.playChord(theme.baseNote + rootOffset, scale, 'pad');
+        }
       }
-      
+
     }, stepTime);
   }
 
-  playKick() {
+  playKick(level = 1) {
       const osc = this.audioContext.createOscillator();
       const gain = this.audioContext.createGain();
-      
+
       osc.frequency.setValueAtTime(150, this.audioContext.currentTime);
       osc.frequency.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
-      
-      gain.gain.setValueAtTime(this.volume * 0.8, this.audioContext.currentTime);
+
+      gain.gain.setValueAtTime(this.volume * 0.8 * level, this.audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
       
       osc.connect(gain);
@@ -149,7 +195,7 @@ export class MusicManager {
       osc.stop(this.audioContext.currentTime + 0.5);
   }
 
-  playHiHat() {
+  playHiHat(level = 1) {
       const bufferSize = this.audioContext.sampleRate * 0.05; // 50ms
       const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
       const data = buffer.getChannelData(0);
@@ -166,7 +212,7 @@ export class MusicManager {
       filter.frequency.value = 7000;
       
       const gain = this.audioContext.createGain();
-      gain.gain.setValueAtTime(this.volume * 0.3, this.audioContext.currentTime);
+      gain.gain.setValueAtTime(this.volume * 0.3 * level, this.audioContext.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
       
       noise.connect(filter);
@@ -174,6 +220,34 @@ export class MusicManager {
       gain.connect(this.audioContext.destination);
       
       noise.start();
+  }
+
+  playClap(level = 1) {
+    const bufferSize = this.audioContext.sampleRate * 0.1;
+    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.audioContext.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1800;
+    filter.Q.value = 0.7;
+
+    const gain = this.audioContext.createGain();
+    gain.gain.setValueAtTime(this.volume * 0.4 * level, this.audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.2);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.audioContext.destination);
+
+    noise.start();
   }
 
   playNote(midiNote, duration, type) {
