@@ -78,11 +78,14 @@ export class BeachScene extends MainScene {
 
   createBuildings() {
     super.createBuildings();
-    
+
     // Beach Bar (Tiki style)
     this.addDetailedBuilding(400, 800, 160, 150, 'beach_bar', 'bar', 'TIKI BAR');
-    
+
     // Beach Hotel
     this.addDetailedBuilding(1500, 780, 200, 250, 'beach_hotel', 'hotel', 'SUNSET INN');
+
+    // Boss hideout overlooking the surf
+    this.addDetailedBuilding(950, 760, 220, 240, 'beach_boss', 'boss', 'BOSS PENTHOUSE');
   }
 }

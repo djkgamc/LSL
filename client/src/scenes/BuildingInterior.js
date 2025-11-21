@@ -5,13 +5,22 @@ import { DateManager } from '../utils/DateManager.js';
 
 const BUMPED_CATS_KEY = 'lsl_bumped_cats';
 
+const TYPE_DIFFICULTY = {
+  bar: 'easy',
+  cafe: 'medium',
+  lounge: 'medium',
+  hotel: 'hard',
+  boss: 'boss'
+};
+
 const BUILDING_DIFFICULTY_MAP = {
   main_bar: 'easy',
-  bar_hotel: 'medium',
+  bar_lounge: 'medium',
   beach_bar: 'easy',
-  city_bar: 'medium',
-  hotel_bar: 'medium',
-  beach_hotel: 'boss',
+  city_bar: 'easy',
+  hotel_lounge: 'medium',
+  beach_hotel: 'hard',
+  beach_boss: 'boss',
   grand_hotel: 'hard',
   city_hotel: 'hard'
 };
@@ -50,7 +59,9 @@ export class BuildingInterior extends Phaser.Scene {
     this.returnScene = data.returnScene || 'BeachScene';
     this.returnX = data.returnX || 100;
     this.returnY = data.returnY || 900;
-    this.dateDifficulty = data.dateDifficulty || BUILDING_DIFFICULTY_MAP[this.buildingId] || 'easy';
+    const defaultDifficulty = BUILDING_DIFFICULTY_MAP[this.buildingId] || TYPE_DIFFICULTY[this.buildingType] || 'easy';
+    this.dateDifficulty = data.dateDifficulty || defaultDifficulty;
+    this.buildingDifficulty = this.dateDifficulty;
     this.bumpedCats = loadBumpedCats();
   }
 
@@ -82,7 +93,9 @@ export class BuildingInterior extends Phaser.Scene {
       return x - Math.floor(x);
     };
 
-    if (this.buildingType === 'bar') {
+    const isBarStyle = this.buildingType === 'bar' || this.buildingType === 'lounge' || this.buildingType === 'cafe';
+
+    if (isBarStyle) {
       const barName = this.buildingId.replace(/_/g, ' ').toUpperCase();
       const barColor = rand(1) > 0.5 ? '#FF00FF' : '#00FFFF';
 
@@ -156,8 +169,11 @@ export class BuildingInterior extends Phaser.Scene {
     // Setup exit
     this.exitKey = this.input.keyboard.addKey('E');
 
-    // Play building music
-    window.musicManager.playSceneMusic('building');
+    // Play building music keyed to difficulty and stop any outdoor layer first
+    if (window.musicManager) {
+      window.musicManager.stopMusic();
+      window.musicManager.playSceneMusic(this.getInteriorMusicKey());
+    }
 
     // Add Techno Cats
     this.createCats();
@@ -180,6 +196,16 @@ export class BuildingInterior extends Phaser.Scene {
       this.cleanupNetworkEvents();
       // this.cleanupMobileControls();
     }, this);
+  }
+
+  getInteriorMusicKey() {
+    const typeKey = `building_${this.buildingType}`;
+    const difficultyKey = `building_${this.dateDifficulty}`;
+    if (window.musicManager && window.musicManager.themes) {
+      if (window.musicManager.themes[typeKey]) return typeKey;
+      if (window.musicManager.themes[difficultyKey]) return difficultyKey;
+    }
+    return 'building';
   }
 
   // cleanupMobileControls() { ... }
@@ -381,7 +407,8 @@ export class BuildingInterior extends Phaser.Scene {
     this.datePartner.setOrigin(0.5);
     this.datePartner.setDepth(6);
 
-    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, 'Press E to try your luck at a neon date', {
+    const difficultyLabel = this.dateDifficulty.toUpperCase();
+    this.datePrompt = this.add.text(this.dateBooth.x, this.dateBooth.y - 130, `Press E to try your luck at a ${difficultyLabel} neon date`, {
       fontSize: '18px',
       fontFamily: 'Courier New',
       color: '#ffddff',

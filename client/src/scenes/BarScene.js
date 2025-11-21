@@ -17,11 +17,11 @@ export class BarScene extends MainScene {
 
   createBuildings() {
     super.createBuildings();
-    
+
     // The Club
     this.addDetailedBuilding(960, 750, 300, 200, 'main_bar', 'bar', 'THE CLUB');
-    
+
     // Side Hotel
-    this.addDetailedBuilding(300, 780, 180, 220, 'bar_hotel', 'hotel', 'MOTEL');
+    this.addDetailedBuilding(300, 780, 180, 220, 'bar_lounge', 'lounge', 'NEON LOUNGE');
   }
 }
