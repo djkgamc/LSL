@@ -25,8 +25,8 @@ export class MusicManager {
       building_lounge: { scale: 'dorian', baseNote: 54, type: 'jazz', speed: 3, tempo: 104, mode: 'loungeDream' },
       building_hotel: { scale: 'phrygian', baseNote: 58, type: 'pad', speed: 3, tempo: 124, mode: 'suitePulse' },
       building_easy: { scale: 'dorian', baseNote: 52, type: 'pad', speed: 3, tempo: 105, mode: 'barGroove' },
-      building_medium: { scale: 'phrygian', baseNote: 55, type: 'jazz', speed: 2, tempo: 118, mode: 'loungeDream' },
-      building_hard: { scale: 'minorPentatonic', baseNote: 48, type: 'techno', speed: 1, tempo: 140, mode: 'suitePulse' },
+      building_medium: { scale: 'phrygian', baseNote: 55, type: 'pad', speed: 3, tempo: 122, mode: 'minimalHouse' },
+      building_hard: { scale: 'minorPentatonic', baseNote: 46, type: 'techno', speed: 1, tempo: 132, mode: 'velvetPulse' },
       building_boss: { scale: 'chromatic', baseNote: 42, type: 'techno', speed: 1, tempo: 146, mode: 'bossPulse' }
     };
 
@@ -90,7 +90,7 @@ export class MusicManager {
     const mode = theme.mode || theme.type;
 
     // Create initial drone/pad (except for heavy techno)
-    if (mode !== 'bossPulse' && theme.type !== 'techno') {
+    if (mode !== 'bossPulse' && theme.type !== 'techno' && mode !== 'velvetPulse') {
       this.playChord(theme.baseNote, scale, 'pad');
     }
 
@@ -129,6 +129,24 @@ export class MusicManager {
           const note = theme.baseNote + scale[noteIndex] + 12;
           this.playNote(note, 0.45, 'lead');
         }
+      } else if (mode === 'minimalHouse') {
+        if (step % 4 === 0) this.playKick(0.75);
+        if (step % 2 === 0) this.playHiHat(0.35);
+
+        if (step % 16 === 0) {
+          const root = theme.baseNote + (Math.random() > 0.5 ? -2 : 0);
+          this.playChord(root, scale, 'pad');
+        }
+
+        if (step % 12 === 0) {
+          const bassNote = theme.baseNote + scale[(step / 12) % scale.length] - 12;
+          this.playNote(bassNote, 0.18, 'bass');
+        }
+
+        if (step % (theme.speed * 3) === 0) {
+          const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
+          this.playNote(melodyNote, 0.2, 'lead');
+        }
       } else if (mode === 'suitePulse') {
         if (step % 4 === 0) this.playKick(0.9);
         if (step % 8 === 0) this.playClap(0.6);
@@ -147,6 +165,25 @@ export class MusicManager {
         if (step % 8 === 0 && Math.random() > 0.6) {
           const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
           this.playNote(melodyNote, 0.2, 'lead');
+        }
+      } else if (mode === 'velvetPulse') {
+        if (step % 4 === 0) this.playKick(0.95);
+        if (step % 4 === 2) this.playHiHat(0.4);
+        if (step % 16 === 8) this.playClap(0.5);
+
+        if (step % 6 === 0) {
+          const bassNote = theme.baseNote + scale[(step / 6) % scale.length] - 12;
+          this.playNote(bassNote, 0.22, 'bass');
+        }
+
+        if (step % 16 === 0) {
+          const chordOffset = [0, 3, 7, 10][(step / 16) % 4];
+          this.playChord(theme.baseNote + chordOffset, scale, 'pad');
+        }
+
+        if (step % 12 === 0 && Math.random() > 0.4) {
+          const melodyNote = theme.baseNote + scale[Math.floor(Math.random() * scale.length)] + 12;
+          this.playNote(melodyNote, 0.28, 'lead');
         }
       } else if (mode === 'bossPulse' || theme.type === 'techno') {
         if (step % 4 === 0) this.playKick(1);

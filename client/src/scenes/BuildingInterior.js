@@ -169,8 +169,11 @@ export class BuildingInterior extends Phaser.Scene {
     // Setup exit
     this.exitKey = this.input.keyboard.addKey('E');
 
-    // Play building music keyed to difficulty
-    window.musicManager.playSceneMusic(this.getInteriorMusicKey());
+    // Play building music keyed to difficulty and stop any outdoor layer first
+    if (window.musicManager) {
+      window.musicManager.stopMusic();
+      window.musicManager.playSceneMusic(this.getInteriorMusicKey());
+    }
 
     // Add Techno Cats
     this.createCats();
