@@ -1,4 +1,13 @@
 import { PALETTE } from '../utils/Visuals.js';
+import { getStyleTierFromScore } from '../utils/styleTier.js';
+
+const SUIT_COLORS = [
+  { body: PALETTE.suitWhite, shirt: PALETTE.shirtBlue },
+  { body: 0xd5f0ff, shirt: 0x00d1ff },
+  { body: 0xc9f7e4, shirt: 0x00d98b },
+  { body: 0xf9e0ff, shirt: 0xc748ff },
+  { body: 0xffd32b, shirt: 0xffa300 }
+];
 
 export class Player extends Phaser.GameObjects.Container {
   constructor(scene, x, y, playerData) {
@@ -8,9 +17,14 @@ export class Player extends Phaser.GameObjects.Container {
     this.speed = 200;
     this.cursors = scene.input.keyboard.createCursorKeys();
     this.spaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.styleTier = typeof playerData.styleTier === 'number'
+      ? playerData.styleTier
+      : getStyleTierFromScore(playerData.score);
+    this.accessories = { hat: null, shades: null };
 
     // Create composite sprite
     this.createCharacterVisuals(scene);
+    this.applyStyleTier();
 
     // Create name label
     this.nameLabel = scene.add.text(0, -50, playerData.name || 'Player', {
@@ -95,6 +109,69 @@ export class Player extends Phaser.GameObjects.Container {
     this.parts = [this.legs, this.bodySprite, this.shirt, this.head, this.hair];
   }
 
+  applyStyleTier() {
+    const palette = SUIT_COLORS[Math.min(this.styleTier, SUIT_COLORS.length - 1)];
+    this.bodySprite.setFillStyle(palette.body);
+    this.shirt.setFillStyle(palette.shirt);
+    this.playerData.styleTier = this.styleTier;
+
+    this.refreshAccessories();
+  }
+
+  refreshAccessories() {
+    this.removeAccessories();
+
+    if (this.styleTier >= 1) {
+      this.accessories.hat = this.createHat(18, 6, 0x1a0b2e);
+    }
+
+    if (this.styleTier >= 2) {
+      this.accessories.hat = this.createHat(34, 12, 0x3b0f53, 0xffe26c);
+    }
+
+    if (this.styleTier >= 3) {
+      this.accessories.shades = this.createShades(16, 6, 0x000000);
+    }
+
+  }
+
+  removeAccessories() {
+    Object.values(this.accessories).forEach(accessory => {
+      if (accessory && accessory.destroy) {
+        accessory.destroy();
+      }
+    });
+    this.accessories = { hat: null, shades: null };
+  }
+
+  createHat(width, height, color, bandColor) {
+    const brim = this.scene.add.rectangle(0, -28, width + 6, 4, color);
+    const top = this.scene.add.rectangle(0, -32 - height / 2, width, height, color);
+    if (bandColor) {
+      const band = this.scene.add.rectangle(0, -32 - height / 2, width, 4, bandColor);
+      this.add(band);
+      top.band = band;
+    }
+    this.add(brim);
+    this.add(top);
+    return {
+      brim,
+      top,
+      destroy: () => {
+        if (top.band) top.band.destroy();
+        brim.destroy();
+        top.destroy();
+      }
+    };
+  }
+
+  createShades(width, height, color) {
+    const shades = this.scene.add.rectangle(0, -24, width, height, color, 0.9);
+    shades.setStrokeStyle(2, 0x555555, 1);
+    this.add(shades);
+    return shades;
+  }
+
   update(time, delta) {
     if (!this.isLocal) return; // Remote players are updated via network
 
@@ -140,6 +217,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.playerData.y = this.y;
     this.playerData.facing = this.facing;
     this.playerData.animState = this.animState;
+    this.playerData.styleTier = this.styleTier;
 
     // Send movement update to server
     if (moved || this.animState !== 'idle') {
@@ -147,7 +225,8 @@ export class Player extends Phaser.GameObjects.Container {
         x: this.x,
         y: this.y,
         facing: this.facing,
-        animState: this.animState
+        animState: this.animState,
+        styleTier: this.styleTier
       });
     }
 
@@ -190,12 +269,14 @@ export class Player extends Phaser.GameObjects.Container {
       this.shirt.y = -4;
     }
 
+    const palette = SUIT_COLORS[Math.min(this.styleTier, SUIT_COLORS.length - 1)];
     // Color effect for fist bump
     if (this.fistBumpTimer > 0) {
       const color = (Math.floor(time / 100) % 2 === 0) ? 0xffffff : 0xff00ff;
       this.bodySprite.setFillStyle(color);
     } else {
-      this.bodySprite.setFillStyle(PALETTE.suitWhite);
+      this.bodySprite.setFillStyle(palette.body);
+      this.shirt.setFillStyle(palette.shirt);
     }
   }
 
@@ -242,10 +323,20 @@ export class Player extends Phaser.GameObjects.Container {
     this.setPosition(playerData.x, playerData.y);
     this.facing = playerData.facing || 'right';
     this.animState = playerData.animState || 'idle';
+    if (playerData.styleTier !== undefined && playerData.styleTier !== this.styleTier) {
+      this.updateStyleTier(playerData.styleTier);
+    }
     this.updateVisuals();
   }
 
+  updateStyleTier(newTier) {
+    if (newTier === undefined || newTier === this.styleTier) return;
+    this.styleTier = newTier;
+    this.applyStyleTier();
+  }
+
   destroy() {
+    this.removeAccessories();
     if (this.sprite) this.sprite.destroy();
     if (this.nameLabel) this.nameLabel.destroy();
     super.destroy();

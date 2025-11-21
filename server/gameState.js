@@ -7,6 +7,11 @@ class GameState {
     this.scenes = ['beach', 'city', 'bar', 'hotel'];
   }
 
+  getStyleTierFromScore(score = 0) {
+    const tier = Math.floor((Number(score) || 0) / 500);
+    return Math.min(4, Math.max(0, tier));
+  }
+
   // Initialize by loading all players from database
   async initialize() {
     try {
@@ -100,7 +105,8 @@ class GameState {
       score: score,
       bumpedTargets: bumpedTargets,
       socialPlatform: dbSocialPlatform,
-      socialHandle: dbSocialHandle
+      socialHandle: dbSocialHandle,
+      styleTier: this.getStyleTierFromScore(score)
     };
 
     this.players.set(socketId, player);
@@ -121,6 +127,7 @@ class GameState {
 
       // Sync back to active player object
       player.score = persistentData.score;
+      player.styleTier = this.getStyleTierFromScore(player.score);
 
       // Persist to DB
       try {
@@ -146,6 +153,7 @@ class GameState {
 
     persistentData.score += amount;
     player.score = persistentData.score;
+    player.styleTier = this.getStyleTierFromScore(player.score);
 
     try {
       await db.pool.query(
@@ -187,6 +195,7 @@ class GameState {
     if (data.scene !== undefined) player.scene = data.scene;
     if (data.facing !== undefined) player.facing = data.facing;
     if (data.animState !== undefined) player.animState = data.animState;
+    if (data.styleTier !== undefined) player.styleTier = data.styleTier;
 
     player.lastUpdate = Date.now();
     return player;

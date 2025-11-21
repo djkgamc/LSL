@@ -516,7 +516,8 @@ export class MainScene extends Phaser.Scene {
             x: this.localPlayer.x,
             y: this.localPlayer.y,
             facing: this.car.direction,
-            animState: 'idle'
+            animState: 'idle',
+            styleTier: this.localPlayer.playerData?.styleTier
           });
         }
       }
