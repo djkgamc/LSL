@@ -5,6 +5,7 @@ import { HotelScene } from './scenes/HotelScene.js';
 import { BuildingInterior } from './scenes/BuildingInterior.js';
 import { NetworkClient } from './network/NetworkClient.js';
 import { MusicManager } from './utils/MusicManager.js';
+import { getStyleTierFromScore } from './utils/styleTier.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -35,6 +36,15 @@ let playerName = 'Larry';
 let socialPlatform = null;
 let socialHandle = null;
 let onlinePlayers = [];
+
+const applyStyleTierToPlayerData = (player) => {
+  if (!player) return player;
+  const existingTier = typeof player.styleTier === 'number' ? player.styleTier : null;
+  const computedTier = getStyleTierFromScore(player.score);
+  return { ...player, styleTier: existingTier !== null ? existingTier : computedTier };
+};
+
+const applyStyleTierToPlayerList = (players = []) => players.map(applyStyleTierToPlayerData);
 
 // Initialize music manager (audio context needs user interaction)
 window.musicManager = new MusicManager();
@@ -383,8 +393,9 @@ function initializeNetwork() {
   });
 
   window.networkClient.on('playerJoined', (player) => {
-    if (!onlinePlayers.find(p => p.id === player.id)) {
-      onlinePlayers.push(player);
+    const styledPlayer = applyStyleTierToPlayerData(player);
+    if (!onlinePlayers.find(p => p.id === styledPlayer.id)) {
+      onlinePlayers.push(styledPlayer);
       updateOnlinePlayersUI();
     }
   });
@@ -395,18 +406,42 @@ function initializeNetwork() {
   });
 
   window.networkClient.on('playerUpdate', (player) => {
+    const styledPlayer = applyStyleTierToPlayerData(player);
     // Update local player data if needed (e.g. name change, though not currently supported)
-    const idx = onlinePlayers.findIndex(p => p.id === player.id);
+    const idx = onlinePlayers.findIndex(p => p.id === styledPlayer.id);
     if (idx !== -1) {
-      onlinePlayers[idx] = { ...onlinePlayers[idx], ...player };
+      onlinePlayers[idx] = { ...onlinePlayers[idx], ...styledPlayer };
       // Only update UI if name changed (optimization)
-      // updateOnlinePlayersUI(); 
+      // updateOnlinePlayersUI();
     }
   });
 
   // Handle score update
   window.networkClient.on('scoreUpdate', (data) => {
     if (scoreEl) scoreEl.textContent = `Score: ${data.score}`;
+
+    const newStyleTier = getStyleTierFromScore(data.score);
+    const playerId = window.networkClient?.getPlayerId();
+    onlinePlayers = onlinePlayers.map(p => p.id === playerId ? { ...p, score: data.score, styleTier: newStyleTier } : p);
+    const activeScenes = game?.scene.getScenes(true) || [];
+    let localPlayerSnapshot = null;
+    activeScenes.forEach(scene => {
+      if (scene.localPlayer) {
+        scene.localPlayer.playerData.score = data.score;
+        scene.localPlayer.updateStyleTier(newStyleTier);
+        localPlayerSnapshot = scene.localPlayer;
+      }
+    });
+
+    if (localPlayerSnapshot && window.networkClient) {
+      window.networkClient.sendPlayerMove({
+        x: localPlayerSnapshot.x,
+        y: localPlayerSnapshot.y,
+        facing: localPlayerSnapshot.facing,
+        animState: localPlayerSnapshot.animState,
+        styleTier: localPlayerSnapshot.playerData.styleTier
+      });
+    }
   });
 
   // Handle leaderboard update
@@ -454,7 +489,7 @@ function initializeNetwork() {
   let initialSceneSet = false;
   window.networkClient.on('gameState', (data) => {
     if (data.allPlayers) {
-      onlinePlayers = data.allPlayers;
+      onlinePlayers = applyStyleTierToPlayerList(data.allPlayers);
       updateOnlinePlayersUI();
     }
     if (data.leaderboard) renderLeaderboard(data.leaderboard);
@@ -472,11 +507,13 @@ function initializeNetwork() {
       const sceneKey = sceneMap[data.player.scene] || 'BeachScene';
       const currentScene = game.scene.getScenes(true)[0];
 
+      const styledPlayer = applyStyleTierToPlayerData(data.player);
+
       // Only switch if we're not already in the correct scene
       if (currentScene && currentScene.scene.key !== sceneKey) {
-        game.scene.start(sceneKey, { player: data.player, allPlayers: data.allPlayers });
+        game.scene.start(sceneKey, { player: styledPlayer, allPlayers: onlinePlayers });
       } else if (!currentScene) {
-        game.scene.start(sceneKey, { player: data.player, allPlayers: data.allPlayers });
+        game.scene.start(sceneKey, { player: styledPlayer, allPlayers: onlinePlayers });
       }
       initialSceneSet = true;
     }
