@@ -3,6 +3,8 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { PALETTE, createGradientTexture } from '../utils/Visuals.js';
 import { DateManager } from '../utils/DateManager.js';
 
+const BUMPED_CATS_KEY = 'lsl_bumped_cats';
+
 const BUILDING_DIFFICULTY_MAP = {
   main_bar: 'easy',
   bar_hotel: 'medium',
@@ -13,6 +15,28 @@ const BUILDING_DIFFICULTY_MAP = {
   grand_hotel: 'hard',
   city_hotel: 'hard'
 };
+// Win path math: goal is Style Tier 4 (2000 pts, since tiers climb every 500).
+// One-time clears across the map award 2x easy (2 * 100 = 200), 3x medium (3 * 200 = 600),
+// 2x hard (2 * 350 = 700), and 1x boss (1 * 600 = 600) for 2100 total—enough to win without repeats.
+
+function loadBumpedCats() {
+  try {
+    const raw = localStorage.getItem(BUMPED_CATS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch (err) {
+    console.warn('Unable to load bumped cats', err);
+    return new Set();
+  }
+}
+
+function persistBumpedCats(set) {
+  try {
+    localStorage.setItem(BUMPED_CATS_KEY, JSON.stringify(Array.from(set)));
+  } catch (err) {
+    console.warn('Unable to persist bumped cats', err);
+  }
+}
 
 export class BuildingInterior extends Phaser.Scene {
   constructor() {
@@ -26,6 +50,7 @@ export class BuildingInterior extends Phaser.Scene {
     this.returnX = data.returnX || 100;
     this.returnY = data.returnY || 900;
     this.dateDifficulty = data.dateDifficulty || BUILDING_DIFFICULTY_MAP[this.buildingId] || 'easy';
+    this.bumpedCats = loadBumpedCats();
   }
 
   create() {
@@ -282,6 +307,28 @@ export class BuildingInterior extends Phaser.Scene {
   }
 
   triggerCatFistBump(cat) {
+    if (this.bumpedCats?.has(cat.id)) {
+      const text = this.add.text(cat.x, cat.y - 50, 'They already vibe with you.', {
+        fontSize: '18px',
+        fontFamily: 'Courier New',
+        color: '#ccccff',
+        stroke: '#000000',
+        strokeThickness: 3
+      });
+      text.setOrigin(0.5);
+      this.tweens.add({
+        targets: text,
+        y: cat.y - 100,
+        alpha: 0,
+        duration: 900,
+        onComplete: () => text.destroy()
+      });
+      return;
+    }
+
+    this.bumpedCats.add(cat.id);
+    persistBumpedCats(this.bumpedCats);
+
     // Visual feedback
     const text = this.add.text(cat.x, cat.y - 50, 'FIST BUMP!', {
       fontSize: '20px',

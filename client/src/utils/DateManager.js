@@ -7,6 +7,34 @@ const STYLE_TIER_REQUIREMENTS = {
   boss: 3
 };
 
+const POINTS_BY_DIFFICULTY = {
+  easy: 100,
+  medium: 200,
+  hard: 350,
+  boss: 600
+};
+
+const DATE_COMPLETION_KEY = 'lsl_dates_completed';
+
+function loadStoredSet(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch (err) {
+    console.warn('Unable to load stored set', key, err);
+    return new Set();
+  }
+}
+
+function persistSet(key, set) {
+  try {
+    localStorage.setItem(key, JSON.stringify(Array.from(set)));
+  } catch (err) {
+    console.warn('Unable to persist set', key, err);
+  }
+}
+
 export class DateManager {
   constructor(scene) {
     this.scene = scene;
@@ -20,6 +48,7 @@ export class DateManager {
     this.toastEl = this.overlay.querySelector('#date-toast');
     this.heartsEl = this.overlay.querySelector('#date-heart-fog');
     this.locked = false;
+    this.completedDates = loadStoredSet(DATE_COMPLETION_KEY);
 
     this.handleKeyBlock = (event) => {
       if (!this.active) return;
@@ -60,6 +89,16 @@ export class DateManager {
     return this.active;
   }
 
+  hasCompletedDate(scriptId) {
+    return !!scriptId && this.completedDates.has(scriptId);
+  }
+
+  markDateCompleted(scriptId) {
+    if (!scriptId) return;
+    this.completedDates.add(scriptId);
+    persistSet(DATE_COMPLETION_KEY, this.completedDates);
+  }
+
   startDate(buildingType = 'bar', difficulty = 'easy') {
     if (this.active) return;
 
@@ -68,6 +107,18 @@ export class DateManager {
 
     this.script = getRandomDateScript(buildingType, difficulty);
     this.currentNodeId = this.script?.startId;
+
+    if (this.hasCompletedDate(this.script?.id)) {
+      this.active = true;
+      this.scene.inputLocked = true;
+      this.overlay.classList.add('visible');
+      this.resultEl.classList.add('hidden');
+      this.heartsEl.classList.remove('success', 'fail', 'rejected');
+      this.toastEl.classList.add('hidden');
+      const repeatLine = `${this.script.partnerName} smiles. "Really looking forward to our next hang—give me a minute to savor the last one."`;
+      this.showResult('repeat', repeatLine);
+      return;
+    }
 
     if (playerTier < requiredTier) {
       this.active = true;
@@ -157,20 +208,40 @@ export class DateManager {
   showResult(outcome, message) {
     const isSuccess = outcome === 'success';
     const isRejected = outcome === 'rejected';
-    const points = isSuccess ? 100 : isRejected ? 0 : 10;
+    const isRepeat = outcome === 'repeat';
+    const points = isSuccess
+      ? POINTS_BY_DIFFICULTY[this.script?.difficulty] ?? POINTS_BY_DIFFICULTY.easy
+      : isRejected || isRepeat
+        ? 0
+        : 10;
     const partnerLabel = isSuccess
       ? `${this.script?.partnerName || 'Date partner'} is in!`
       : isRejected
         ? `${this.script?.partnerName || 'Date partner'} isn\'t feeling your look.`
-        : `${this.script?.partnerName || 'Date partner'} isn\'t convinced.`;
+        : isRepeat
+          ? `${this.script?.partnerName || 'Date partner'} already has a neon night booked with you.`
+          : `${this.script?.partnerName || 'Date partner'} isn\'t convinced.`;
 
     this.optionsEl.innerHTML = '';
     this.promptEl.textContent = '';
+    const bossSwagNote = isSuccess && this.script?.difficulty === 'boss'
+      ? ' You unlock legendary lenses and a fresh swagger upgrade.'
+      : '';
     this.partnerEl.textContent = partnerLabel;
-    this.resultEl.textContent = `${message} (${points} pts)`;
+    this.resultEl.textContent = `${message}${bossSwagNote} (${points} pts)`;
     this.resultEl.classList.remove('hidden');
     this.heartsEl.classList.remove('success', 'fail', 'rejected');
-    this.heartsEl.classList.add(isSuccess ? 'success' : isRejected ? 'rejected' : 'fail');
+    this.heartsEl.classList.add(isSuccess ? 'success' : isRejected || isRepeat ? 'rejected' : 'fail');
+
+    if (isSuccess) {
+      this.markDateCompleted(this.script?.id);
+    }
+
+    if (isSuccess && this.script?.difficulty === 'boss' && this.scene?.localPlayer) {
+      const boostedTier = Math.min(4, (this.scene.localPlayer.styleTier ?? 0) + 1);
+      this.scene.localPlayer.updateStyleTier(boostedTier);
+      this.scene.localPlayer.playerData.styleTier = boostedTier;
+    }
 
     if (window.networkClient && window.networkClient.sendDateResult) {
       window.networkClient.sendDateResult({ outcome, points });
