@@ -66,6 +66,9 @@ export class DateManager {
     const requiredTier = STYLE_TIER_REQUIREMENTS[difficulty] ?? STYLE_TIER_REQUIREMENTS.easy;
     const playerTier = this.scene?.localPlayer?.styleTier ?? 0;
 
+    this.script = getRandomDateScript(buildingType, difficulty);
+    this.currentNodeId = this.script?.startId;
+
     if (playerTier < requiredTier) {
       this.active = true;
       this.scene.inputLocked = true;
@@ -73,13 +76,11 @@ export class DateManager {
       this.resultEl.classList.add('hidden');
       this.heartsEl.classList.remove('success', 'fail', 'rejected');
       this.toastEl.classList.add('hidden');
-      this.script = null;
-      this.showResult('rejected', `Need style tier ${requiredTier}+ to attempt a ${difficulty.toUpperCase()} date.`);
+      const rejectionLine = this.buildStyleRejection(requiredTier, playerTier);
+      this.showResult('rejected', rejectionLine);
       return;
     }
 
-    this.script = getRandomDateScript(buildingType, difficulty);
-    this.currentNodeId = this.script?.startId;
     if (!this.script || !this.currentNodeId) return;
 
     this.active = true;
@@ -90,6 +91,30 @@ export class DateManager {
     this.toastEl.classList.add('hidden');
     this.renderNode();
     this.attachNetworkHook();
+  }
+
+  buildStyleRejection(requiredTier, playerTier) {
+    const partner = this.script?.partnerName || 'Your date';
+
+    if (requiredTier === 1) {
+      return `${partner} taps their head. "No hat? Medium nights need a brim."`;
+    }
+
+    if (requiredTier === 2) {
+      const line = playerTier === 0
+        ? 'No hat at all? Hard nights ask for a tall crown.'
+        : 'Cute cap, but that brim is tiny. Hard nights want a bigger silhouette.';
+      return `${partner} squints at your outfit. "${line}"`;
+    }
+
+    if (requiredTier === 3) {
+      const shadeLine = playerTier >= 2
+        ? 'Those shades are training wheels; boss booths want statement lenses.'
+        : 'Boss booths only vibe with legends in mirrored shades.';
+      return `${partner} lowers their own lenses. "${shadeLine}"`;
+    }
+
+    return `${partner} shrugs. "Come back with a sharper look."`;
   }
 
   renderNode() {
@@ -134,10 +159,10 @@ export class DateManager {
     const isRejected = outcome === 'rejected';
     const points = isSuccess ? 100 : isRejected ? 0 : 10;
     const partnerLabel = isSuccess
-      ? 'Date Locked In!'
+      ? `${this.script?.partnerName || 'Date partner'} is in!`
       : isRejected
-        ? 'Date Rejected (Style Tier Too Low)'
-        : 'Date Fizzled (But Points!)';
+        ? `${this.script?.partnerName || 'Date partner'} isn\'t feeling your look.`
+        : `${this.script?.partnerName || 'Date partner'} isn\'t convinced.`;
 
     this.optionsEl.innerHTML = '';
     this.promptEl.textContent = '';
