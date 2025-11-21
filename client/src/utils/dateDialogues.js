@@ -145,41 +145,45 @@ export const DATE_SCRIPTS = {
     {
       id: 'bar_boss_neon',
       difficulty: 'boss',
-      partnerName: 'Neon Duchess',
+      partnerName: 'The Grand Manager',
       vibe: 'bar',
       startId: 'opener',
       nodes: {
         opener: {
-          prompt: 'The Neon Duchess lounges on a throne booth. "Pitch me a night worthy of a legend."',
+          prompt: 'The Grand Manager peers over ledgers. "Convince me you deserve the penthouse."',
           options: [
-            { text: 'A midnight rooftop set with live lasers synced to our heartbeats.', next: 'vision' },
-            { text: 'An all-you-can-eat wing buffet.', result: 'fail' }
+            { text: 'We bring stories—every room gets a soundtrack.', next: 'staff' },
+            { text: 'We host rooftop salons with live DJs for guests.', next: 'staff' },
+            { text: 'We can pay? Probably?', result: 'fail' }
           ]
         },
-        vision: {
-          prompt: '"Ambitious. Who headlines?"',
+        staff: {
+          prompt: '"How do you treat the staff?"',
           options: [
-            { text: 'You. I\'ll hype, you command.', next: 'risk' },
-            { text: 'My buddy who kinda DJs.', result: 'fail' }
+            { text: 'Like co-stars. We tip in credits and compliments.', next: 'emergency' },
+            { text: 'We host staff-appreciation open mic nights.', next: 'emergency' },
+            { text: 'They don\'t notice us; we\'re stealth.', result: 'fail' }
           ]
         },
-        risk: {
-          prompt: '"What if the power cuts?"',
+        emergency: {
+          prompt: '"Fire alarm at 3 AM. What happens?"',
           options: [
-            { text: 'We switch to analog—acoustic harmonies by candle.', next: 'secret' },
-            { text: 'We bail. Too risky.', result: 'fail' }
+            { text: 'We lead a calm, stylish evacuation to lobby playlists.', next: 'legacy' },
+            { text: 'We coordinate room checks while concierge handles comms.', next: 'legacy' },
+            { text: 'We hide on the balcony.', result: 'fail' }
           ]
         },
-        secret: {
-          prompt: 'She leans closer. "Final question: what\'s the hidden finale?"',
+        legacy: {
+          prompt: '"Final condition: what legacy do you leave behind?"',
           options: [
-            { text: 'A surprise sunrise slow dance on the empty dance floor.', result: 'success' },
-            { text: 'Fireworks indoors, probably.', result: 'fail' }
+            { text: 'A guestbook full of gratitude and doodles.', result: 'success' },
+            { text: 'A secret guide to kindness in every room drawer.', result: 'success' },
+            { text: 'A mess for housekeeping.', result: 'fail' }
           ]
         }
       },
-      successMessage: 'The Duchess clinks a crystal glass to yours. "Legendary. We ride." The bar erupts in neon hearts.',
-      failureMessage: 'She smirks, waves a jeweled hand, and your invitation dissolves in pink static.'
+      successMessage: 'Keys gleam in your hand. "Penthouse granted." Heart-shaped confetti falls from hidden vents.',
+      failureMessage: 'The Manager stamps DECLINED in red light and slides you a coupon for the lobby cafe.'
     }
   ],
   hotel: [
@@ -300,49 +304,6 @@ export const DATE_SCRIPTS = {
       },
       successMessage: 'Lumen links pinky fingers with you. Stars and hearts blur together over the skyline.',
       failureMessage: 'Clouds cover the view. Lumen smiles and hands you a weather app recommendation.'
-    },
-    {
-      id: 'hotel_penthouse_boss',
-      difficulty: 'boss',
-      partnerName: 'The Grand Manager',
-      vibe: 'hotel',
-      startId: 'opener',
-      nodes: {
-        opener: {
-          prompt: 'The Grand Manager peers over ledgers. "Convince me you deserve the penthouse."',
-          options: [
-            { text: 'We bring stories—every room gets a soundtrack.', next: 'staff' },
-            { text: 'We host rooftop salons with live DJs for guests.', next: 'staff' },
-            { text: 'We can pay? Probably?', result: 'fail' }
-          ]
-        },
-        staff: {
-          prompt: '"How do you treat the staff?"',
-          options: [
-            { text: 'Like co-stars. We tip in credits and compliments.', next: 'emergency' },
-            { text: 'We host staff-appreciation open mic nights.', next: 'emergency' },
-            { text: 'They don\'t notice us; we\'re stealth.', result: 'fail' }
-          ]
-        },
-        emergency: {
-          prompt: '"Fire alarm at 3 AM. What happens?"',
-          options: [
-            { text: 'We lead a calm, stylish evacuation to lobby playlists.', next: 'legacy' },
-            { text: 'We coordinate room checks while concierge handles comms.', next: 'legacy' },
-            { text: 'We hide on the balcony.', result: 'fail' }
-          ]
-        },
-        legacy: {
-          prompt: '"Final condition: what legacy do you leave behind?"',
-          options: [
-            { text: 'A guestbook full of gratitude and doodles.', result: 'success' },
-            { text: 'A secret guide to kindness in every room drawer.', result: 'success' },
-            { text: 'A mess for housekeeping.', result: 'fail' }
-          ]
-        }
-      },
-      successMessage: 'Keys gleam in your hand. "Penthouse granted." Heart-shaped confetti falls from hidden vents.',
-      failureMessage: 'The Manager stamps DECLINED in red light and slides you a coupon for the lobby cafe.'
     }
   ]
 };

@@ -3,6 +3,46 @@ import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { Car } from '../entities/Car.js';
 import { PALETTE, createGradientTexture } from '../utils/Visuals.js';
 
+const DIFFICULTY_STYLES = {
+  easy: {
+    bodyColor: 0x0b3c4c,
+    rimColor: 0x00ffff,
+    signColor: '#00ffff',
+    entryColor: 0x00ffff,
+    windowLit: 0x8bffff
+  },
+  medium: {
+    bodyColor: 0x3f0b3c,
+    rimColor: 0xff00ff,
+    signColor: '#ff00ff',
+    entryColor: 0xff00ff,
+    windowLit: 0xffa9ff
+  },
+  hard: {
+    bodyColor: 0x4a3300,
+    rimColor: 0xffd700,
+    signColor: '#ffd700',
+    entryColor: 0xffd700,
+    windowLit: 0xfff2a8
+  },
+  boss: {
+    bodyColor: 0x180b3c,
+    rimColor: 0xffffff,
+    signColor: '#ffffff',
+    entryColor: 0xffd700,
+    pulseBetween: [0x7f00ff, 0x00ffff, 0xffd700],
+    windowLit: 0xe1d7ff
+  }
+};
+
+const TYPE_DIFFICULTY = {
+  bar: 'easy',
+  cafe: 'medium',
+  lounge: 'medium',
+  hotel: 'hard',
+  boss: 'boss'
+};
+
 export class MainScene extends Phaser.Scene {
   constructor(key, sceneName, backgroundColor) {
     super({ key });
@@ -267,13 +307,45 @@ export class MainScene extends Phaser.Scene {
     this.buildings = [];
   }
 
-  addDetailedBuilding(x, y, width, height, buildingId, buildingType, name) {
-    const building = { x, y, width, height, buildingId, buildingType };
+  addDetailedBuilding(x, y, width, height, buildingId, buildingType, name, difficulty = null) {
+    const resolvedDifficulty = difficulty || TYPE_DIFFICULTY[buildingType] || 'easy';
+    const palette = DIFFICULTY_STYLES[resolvedDifficulty] || DIFFICULTY_STYLES.easy;
+    const building = { x, y, width, height, buildingId, buildingType, name, difficulty: resolvedDifficulty };
 
-    // Main body (dark)
-    const body = this.add.rectangle(x, y, width, height, PALETTE.buildingBody);
+    // Main body (dark, tinted per difficulty)
+    const body = this.add.rectangle(x, y, width, height, palette.bodyColor || PALETTE.buildingBody);
     body.setDepth(-10);
-    body.setStrokeStyle(2, PALETTE.buildingRim); // Neon outline
+    body.setStrokeStyle(2, palette.rimColor || PALETTE.buildingRim); // Neon outline
+
+    if (palette.pulseBetween && palette.pulseBetween.length >= 2) {
+      let fromIndex = 0;
+      let toIndex = 1;
+      this.tweens.addCounter({
+        from: 0,
+        to: 100,
+        duration: 1800,
+        repeat: -1,
+        yoyo: true,
+        onYoyo: () => {
+          fromIndex = (fromIndex + 1) % palette.pulseBetween.length;
+          toIndex = (toIndex + 1) % palette.pulseBetween.length;
+        },
+        onUpdate: (tween) => {
+          const value = tween.getValue();
+          const fromColor = Phaser.Display.Color.IntegerToColor(palette.pulseBetween[fromIndex]);
+          const toColor = Phaser.Display.Color.IntegerToColor(palette.pulseBetween[toIndex]);
+          const interpolated = Phaser.Display.Color.Interpolate.ColorWithColor(
+            fromColor,
+            toColor,
+            100,
+            value
+          );
+          const newColor = Phaser.Display.Color.GetColor(interpolated.r, interpolated.g, interpolated.b);
+          body.setFillStyle(newColor);
+          body.setStrokeStyle(2, palette.rimColor || newColor);
+        }
+      });
+    }
 
     // Windows
     const windowCols = Math.floor(width / 30);
@@ -285,30 +357,34 @@ export class MainScene extends Phaser.Scene {
         const wy = y - height / 2 + 20 + r * 40;
         // Randomly lit windows
         const isLit = Math.random() > 0.7;
-        const color = isLit ? PALETTE.windowLit : PALETTE.windowDark;
+        const color = isLit ? (palette.windowLit || PALETTE.windowLit) : PALETTE.windowDark;
         const win = this.add.rectangle(wx, wy, 16, 24, color);
         win.setDepth(-9);
       }
     }
 
     // Neon Sign
+    const signColor = palette.signColor || '#ffffff';
+    const signStrokeColor = palette.signStrokeColor || signColor;
     const signText = this.add.text(x, y - height / 2 - 30, name, {
       fontSize: '20px',
       fontFamily: 'Courier New',
-      color: '#ffffff',
-      stroke: '#ff00ff',
-      strokeThickness: 4,
-      shadow: { blur: 10, color: '#ff00ff', fill: true }
+      color: signColor,
+      stroke: signStrokeColor,
+      strokeThickness: 3,
+      shadow: { blur: 2, color: signStrokeColor, fill: true }
     });
     signText.setOrigin(0.5);
     signText.setDepth(-8);
 
     // Entry Highlight
     const entry = this.add.rectangle(x, y + height / 2 - 30, 40, 60, 0x000000, 0.5);
-    entry.setStrokeStyle(2, 0x00ffff); // Cyan entry
+    entry.setStrokeStyle(2, palette.entryColor || 0x00ffff);
     entry.setDepth(-9);
 
-    this.buildings.push(building);
+    if (buildingType !== 'none') {
+      this.buildings.push(building);
+    }
   }
 
   setupNetworkEvents() {
@@ -495,6 +571,7 @@ export class MainScene extends Phaser.Scene {
     this.scene.start('BuildingInterior', {
       buildingType: data.buildingType,
       buildingId: data.buildingId,
+      dateDifficulty: data.dateDifficulty || data.difficulty,
       returnScene: this.sceneName,
       returnX: this.localPlayer ? this.localPlayer.x : 100,
       returnY: this.localPlayer ? this.localPlayer.y : 900
@@ -611,8 +688,8 @@ export class MainScene extends Phaser.Scene {
       if (playerX > left && playerX < right) {
         console.log('E pressed (event), sending enterBuilding');
         this.isEnteringBuilding = true; // Lock
-        window.networkClient.enterBuilding(building.buildingId, building.buildingType);
-        // Unlock after a timeout in case server fails? 
+        window.networkClient.enterBuilding(building.buildingId, building.buildingType, building.difficulty);
+        // Unlock after a timeout in case server fails?
         // Better to let scene change handle it, but if it fails, we're stuck.
         // Let's add a safety unlock.
         this.time.delayedCall(2000, () => this.isEnteringBuilding = false);
@@ -639,9 +716,11 @@ export class MainScene extends Phaser.Scene {
         canInteract = true;
 
         // Show prompt
+        const difficultyLabel = (building.difficulty || 'easy').toUpperCase();
+        const buildingLabel = building.name || (building.buildingType === 'bar' ? 'Bar' : 'Hotel');
         this.interactionText.setPosition(building.x, building.y - building.height / 2 - 60);
         this.interactionText.setVisible(true);
-        this.interactionText.setText(`Enter ${building.buildingType === 'bar' ? 'Bar' : 'Hotel'} (E)`);
+        this.interactionText.setText(`Enter ${buildingLabel} [${difficultyLabel}] (E)`);
       }
     });
 
